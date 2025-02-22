@@ -1,0 +1,33 @@
+.logo {
+    margin-top: 8px;
+}
+.headerContainer {
+    /* border:1px solid black; */
+    width: 140px;
+    height: 100vh;
+    /* background: rgb(100, 132, 162); */
+    /* background: rgb(66, 101, 133); */
+    background: linear-gradient(.25turn, rgb(63, 99, 132), 30%, rgb(123, 169, 213));
+    border-radius: 0 20px 20px 0;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    gap:32px;
+}
+.headerContainer nav {
+    padding:0px 10px;
+    color:whitesmoke;
+    font-weight: 900;
+    font-size: 20px;
+}
+.headerContainer nav li {
+    padding:8px 12px;
+    margin-top:21px;
+    border-radius: 15px;
+    transition: all 0.5s;
+}
+.headerContainer nav li:hover {
+    background: whitesmoke;
+    opacity: 70%;
+    color:#333;
+}
