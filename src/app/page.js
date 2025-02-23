@@ -57,7 +57,7 @@ export default function Monitoring() {
         <div className={styles.floorBtnContainer}>
           <button onClick={()=>{
             setSelectedFloor("1층")
-          }} className={selectedFloor==="1층" ? styles.floorBtnClick : ""}>1층</button>
+          }} className={selectedFloor==="1층" ? styles.floorBtnClick : ""}>1층입니당</button>
           <button onClick={()=>{
             setSelectedFloor("2층")
           }} className={selectedFloor==="2층" ? styles.floorBtnClick : ""}>2층</button>
