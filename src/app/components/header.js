@@ -4,6 +4,9 @@
 import Link from "next/link"
 import Image from "next/image"
 import styles from "./header.module.css"
+import BluetoothConnect from "./bluetoothConnect"; // Bluetooth 모달 추가
+
+
 
 // (헤더 컴포넌트)
 export default function Header() {
@@ -29,6 +32,9 @@ export default function Header() {
                         </Link>
                 </ul>
             </nav>
+
+            {/* 블루투스 아이콘 추가 */}
+            <BluetoothConnect />
         </div>
     )
 }
