@@ -165,6 +165,17 @@ export default function InboundPage() {
         ))}
       </div>
 
+      {/* ✅ 입력 필드 & 입고 버튼 (boxArrived가 true일 때 표시) */}
+      {boxArrived && (
+        <div className="mt-6 flex flex-col items-center">
+          <input type="text" placeholder="상품명 입력" value={itemName} onChange={(e) => setItemName(e.target.value)}
+            className="border p-3 rounded-lg w-2/3 text-lg text-center shadow-md mb-3 text-black" />
+          <input type="number" placeholder="개수 입력" value={quantity} onChange={(e) => setQuantity(e.target.value)}
+            className="border p-3 rounded-lg w-2/3 text-lg text-center shadow-md text-black" />
+        </div>
+      )}
+
+
       {/* ✅ 버튼 UI */}
       <div className="flex flex-wrap justify-center space-x-3 mt-6">
         <button className="px-6 py-3 bg-gray-600 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleRetrieveBox}>
