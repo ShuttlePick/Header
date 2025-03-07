@@ -1,7 +1,9 @@
 "use client"; // ✅ Next.js에서 클라이언트 측에서 실행되는 컴포넌트임을 명시
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BluetoothService from "../components/bluetoothService"; // ✅ BluetoothService 불러오기 (Bluetooth 통신 처리)
+import { shuttlepickFirestore } from "@/firebase";
+import { addDoc, collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 // ✅ 입고 페이지 컴포넌트
 export default function InboundPage() {
@@ -35,6 +37,28 @@ export default function InboundPage() {
     setSelectedSpace(space);
     setBoxArrived(false); // 새로운 공간 선택 시 초기화
   };
+
+  // 페이지 로드할 때, firesotre에서 데이터 가져오기
+  useEffect(() => {
+    const fetchStorageData = async () => {
+      try {
+        const docRef = doc(shuttlepickFirestore, "storageData", `${selectedFloor}층`);
+        const docSnap = await getDoc(docRef);
+
+        if(docSnap.exists()) {
+          setStorageData((prev) => ({
+            ...prev,
+            [selectedFloor]: docSnap.data() //Firestore 데이터 적용
+          }));
+        } else {
+          console.log("데이터가 없습니다.");
+        }
+      } catch (error) {
+        console.error("데이터 불러오기 실패!", error);
+      }
+    };
+    fetchStorageData();
+  }, [selectedFloor]); // 층 변경될 때마다 실행
 
   /**
    * ✅ 상자 가져오기 핸들러
@@ -82,6 +106,12 @@ export default function InboundPage() {
 
     try {
       await BluetoothService.sendCommand("Placing", formattedSpace);
+
+      // ✅ Firestore에 해당 공간 데이터 저장
+    const docRef = doc(shuttlepickFirestore, "storageData", `${selectedFloor}층`);
+    await setDoc(docRef, {
+      [selectedSpace]: { name: itemName, quantity: Number(quantity) } // 저장할 데이터
+    }, { merge: true }); // 🔥 기존 데이터 유지하면서 덮어쓰기
 
       // ✅ 창고 데이터 업데이트 (입고 완료된 정보 반영)
       setStorageData((prev) => ({
