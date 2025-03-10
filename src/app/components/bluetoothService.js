@@ -30,18 +30,21 @@ export default class BluetoothService {
    */
   static async sendBluetoothData(command) {
     if (!this.characteristic) {
-      console.error("❌ Bluetooth가 연결되지 않았습니다. 데이터를 전송할 수 없습니다.");
-      return;
+        console.error("❌ Bluetooth가 연결되지 않았습니다. 데이터를 전송할 수 없습니다.");
+        return;
     }
 
     try {
-      const encoder = new TextEncoder();
-      await this.characteristic.writeValue(encoder.encode(JSON.stringify(command)));
-      console.log("✅ Bluetooth 데이터 전송 완료:", JSON.stringify(command, null, 2));
+        const encoder = new TextEncoder();
+        const message = JSON.stringify(command) + "\n";  // 🔥 개행 추가
+        console.log("📡 Bluetooth 송신 중 (개행 포함)...:", JSON.stringify({ message }));
+        await this.characteristic.writeValue(encoder.encode(message));
+        console.log("✅ Bluetooth 데이터 전송 완료 (개행 포함):", JSON.stringify({ message }));
     } catch (error) {
-      console.error("❌ Bluetooth 전송 실패:", error);
+        console.error("❌ Bluetooth 전송 실패:", error);
     }
   }
+  
 
   /**
    * ✅ STM32로 이동 명령을 전송하는 함수
@@ -81,3 +84,4 @@ export default class BluetoothService {
     await this.sendBluetoothData(command);  // ✅ 블루투스로 데이터 전송
   }
 }
+
