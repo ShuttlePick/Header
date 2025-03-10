@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import BluetoothService from "../components/bluetoothService"; // ✅ BluetoothService 불러오기 (Bluetooth 통신 처리)
 import { shuttlepickFirestore } from "@/firebase";
-import { addDoc, collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 // ✅ 입고 페이지 컴포넌트
 export default function InboundPage() {
@@ -90,6 +90,7 @@ export default function InboundPage() {
    * - 사용자가 입력한 상품명과 개수를 STM32에 전송
    */
   const handleStoreBox = async () => {
+    
     if (!selectedSpace) {
       alert("❌ 적재 공간을 먼저 선택하세요.");
       return;
@@ -109,9 +110,34 @@ export default function InboundPage() {
 
       // ✅ Firestore에 해당 공간 데이터 저장
     const docRef = doc(shuttlepickFirestore, "storageData", `${selectedFloor}층`);
+    const washingtonRef = doc(shuttlepickFirestore, "inboundData", "inboundData");
+
     await setDoc(docRef, {
       [selectedSpace]: { name: itemName, quantity: Number(quantity) } // 저장할 데이터
     }, { merge: true }); // 🔥 기존 데이터 유지하면서 덮어쓰기
+    
+    const inboundSnap = await getDoc(washingtonRef);
+    let itemId = 1;
+
+    if (inboundSnap.exists()) {
+      const existingData = inboundSnap.data().inboundData || [];
+
+      if (existingData.length > 0) {
+        // 가장 큰 id 값을 찾아서 +1
+        const maxId = Math.max(...existingData.map((item) => item.id));
+        itemId = maxId + 1;
+      }
+    }
+
+    if (inboundSnap.exists()) {
+      await updateDoc(washingtonRef, {
+        inboundData: arrayUnion({ id: itemId, name: itemName, quantity: Number(quantity) })
+      }, {merge:true});
+    } else {
+      await setDoc(washingtonRef, {
+        inboundData: [{ id: itemId, name: itemName, quantity: Number(quantity) }]
+      });
+    }
 
       // ✅ 창고 데이터 업데이트 (입고 완료된 정보 반영)
       setStorageData((prev) => ({
@@ -152,9 +178,9 @@ export default function InboundPage() {
   };
 
   return (
-    <div className="ml-[180px] p-6">
+    <div className="ml-[140px] p-6 flex space-x-6 justify-center items-center h-screen">
       {/* ✅ 층 선택 */}
-      <div className="flex justify-center space-x-4 mb-4">
+      <div className="flex flex-col space-y-4 mb-4">
         <button
           className={`px-6 py-3 rounded-lg text-lg font-bold shadow-md ${
             selectedFloor === 1 ? "bg-blue-600 text-white" : "bg-gray-300 text-black"
@@ -174,6 +200,7 @@ export default function InboundPage() {
       </div>
 
       {/* ✅ 적재 공간 UI */}
+    <div className="flex flex-col space-y-4">
       <div className="grid grid-cols-2 gap-4">
         {["A1", "A2", "B1", "B2"].map((space) => (
           <div
@@ -197,26 +224,30 @@ export default function InboundPage() {
 
       {/* ✅ 입력 필드 & 입고 버튼 (boxArrived가 true일 때 표시) */}
       {boxArrived && (
-        <div className="mt-6 flex flex-col items-center">
+        <div className="mt-6 flex flex-col">
           <input type="text" placeholder="상품명 입력" value={itemName} onChange={(e) => setItemName(e.target.value)}
-            className="border p-3 rounded-lg w-2/3 text-lg text-center shadow-md mb-3 text-black" />
+            className="border p-3 rounded-lg text-lg text-center shadow-md mb-3 text-black" />
           <input type="number" placeholder="개수 입력" value={quantity} onChange={(e) => setQuantity(e.target.value)}
-            className="border p-3 rounded-lg w-2/3 text-lg text-center shadow-md text-black" />
+            className="border p-3 rounded-lg text-lg text-center shadow-md text-black" />
+            <button className="mt-3 px-6 py-3 bg-blue-500 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleStoreBox}>
+              입고
+            </button>
         </div>
       )}
+    </div>
 
 
       {/* ✅ 버튼 UI */}
-      <div className="flex flex-wrap justify-center space-x-3 mt-6">
+      <div className="flex flex-col justify-center space-y-3">
         <button className="px-6 py-3 bg-gray-600 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleRetrieveBox}>
           상자 가져오기
         </button>
 
-        {boxArrived && (
+        {/* {boxArrived && (
           <button className="px-6 py-3 bg-blue-500 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleStoreBox}>
             입고
           </button>
-        )}
+        )} */}
 
         <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
           일시중지
