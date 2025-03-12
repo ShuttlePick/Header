@@ -47,10 +47,15 @@ export default function Monitoring() {
           const docSnap = await getDoc(docRef);
   
           if(docSnap.exists()) {
-            const data = docSnap.data();
+            const data = docSnap.data().inboundData;
             console.log("입입고 데이텅 : ", data);
+            
+            const inboundDataWithType = data.map((item) => ({
+              ...item,
+              type: "입고",
+            }));
 
-            setInboundData(data.inboundData);
+            setInboundData(inboundDataWithType);
           }
         } catch (error) {
           console.error("outbound 데이터 불러오기 실패!", error);
@@ -63,10 +68,15 @@ export default function Monitoring() {
           const docSnap = await getDoc(docRef);
   
           if(docSnap.exists()) {
-            const data = docSnap.data();
+            const data = docSnap.data().outboundData;
             console.log("출고 데이텅 : ", data);
 
-            setOutboundData(data.outboundData);
+            const outboundDataWithType = data.map((item) => ({
+              ...item,
+              type : "출고"
+            }));
+
+            setOutboundData(outboundDataWithType);
           }
         } catch (error) {
           console.error("outbound 데이터 불러오기 실패!", error);
@@ -80,11 +90,12 @@ export default function Monitoring() {
 
 
   // 🔥 필터링된 입출고 내역
-  const filteredData = [...inboundData, ...outboundData].filter((item) => 
-    item.name && item.name.includes(searchQuery)
-    // if (filterType === "전체") return true;
-    // return item.type === filterType;
-  );
+  const filteredData = [...inboundData, ...outboundData]
+  .filter((item) => {
+    if (filterType === "전체") return true; // 전체 보기
+    return item.type === filterType; // "입고" or "출고" 필터링
+  })
+  .filter((item) => item.name.includes(searchQuery)); // 검색 필터 적용
 
   return (
     <div className="ml-[140px] p-6 flex space-x-6 justify-center items-center h-screen">
@@ -190,7 +201,7 @@ export default function Monitoring() {
         {/* ✅ 필터링된 입출고 내역 */}
         <div className="mt-4 space-y-2">
           {filteredData
-            .filter((item) => item.name.includes(searchQuery)) // 🔍 검색 필터
+            // .filter((item) => item.name.includes(searchQuery)) // 🔍 검색 필터
             .map((item, index) => (
               <div
                 key={index}
