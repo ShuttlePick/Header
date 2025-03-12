@@ -202,11 +202,14 @@ export default function InboundPage() {
       {/* ✅ 적재 공간 UI */}
     <div className="flex flex-col space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        {["A1", "A2", "B1", "B2"].map((space) => (
+        {["A1", "B1", "A2", "B2"].map((space) => (
           <div
             key={space}
-            className={`border p-6 cursor-pointer rounded-lg text-center text-lg font-semibold ${
-              selectedSpace === space ? "bg-green-400 text-white" : "bg-gray-200 text-black"
+            className={`border p-6 cursor-pointer rounded-lg flex flex-col justify-center items-center text-center text-base sm:text-lg md:text-xl font-semibold 
+              w-[100px] sm:w-[150px] md:w-[180px] lg:w-[350px] 
+              h-[80px] sm:h-[100px] md:h-[120px] lg:h-[200px]
+              
+              ${selectedSpace === space ? "bg-green-400 text-white" : "bg-gray-200 text-black"
             }`}
             onClick={() => handleSelectSpace(space)}
           >
