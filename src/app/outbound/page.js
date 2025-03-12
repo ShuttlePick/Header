@@ -3,6 +3,7 @@
 import { shuttlepickFirestore } from "@/firebase";
 import { arrayUnion, collection, deleteField, doc, getDoc, getDocs, onSnapshot, setDoc, updateDoc } from "@firebase/firestore";
 import { useEffect, useState } from "react";
+import BluetoothService from "../components/bluetoothService"; // ✅ Bluetooth 모듈 불러오기
 
 export default function OutboundPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -11,6 +12,7 @@ export default function OutboundPage() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [emergencyStop, setEmergencyStop] = useState(false);
   const [allItems, setAllItems] = useState([]);
+  const [boxReturnVisible, setBoxReturnVisible] = useState(false); // ✅ "상자 복귀" 버튼 표시 여부 상태
 
   // 페이지 로드할 때, firesotre에서 데이터 가져오기
   const fetchAllItems = () => {
@@ -106,6 +108,22 @@ export default function OutboundPage() {
         
         const [floor, space] = item.id.split("-");
 
+        const formattedSpace = floor === "2층" ? `${space}_2F` : space; // ✅ 2층이면 "A1" → "A1_2F" 변환
+
+        // ✅ 블루투스 출고 명령 전송 (Bluetooth가 실패하면 Firestore 업데이트 중단)
+        try {
+          await BluetoothService.sendCommand("Picking", formattedSpace);
+          console.log(`📡 Bluetooth 출고 명령 전송 완료: ${formattedSpace}`);
+        } catch (bluetoothError) {
+          console.error("❌ Bluetooth 출고 실패!", bluetoothError);
+          alert("⚠️ Bluetooth 출고 명령 전송 중 오류가 발생했습니다.");
+          return; // Bluetooth 전송 실패 시 Firestore 업데이트 중단
+        }
+
+        // ✅ Bluetooth 전송이 성공하면 "상자 복귀" 버튼을 표시
+        setBoxReturnVisible(true);
+
+
         const docRef = doc(shuttlepickFirestore, "storageData", floor);
         // Firestore의 현재 데이터 가져오기기
         const docSnap = await getDoc(docRef);
@@ -163,8 +181,41 @@ export default function OutboundPage() {
     }
   };
 
+  const handleReturnBox = async () => {
+    if (!selectedItems.length) {
+      console.log("⚠️ 복귀할 물품이 없습니다.");
+      return;
+    }
+  
+    try {
+      for (const item of selectedItems) {
+        const [floor, space] = item.id.split("-");
+  
+        const formattedSpace = floor === "2층" ? `${space}_2F` : space; // ✅ 2층이면 "A1" → "A1_2F" 변환
+  
+        // ✅ Bluetooth로 복귀 명령 전송
+        try {
+          await BluetoothService.sendCommand("Returning", formattedSpace);
+          console.log(`📦 Bluetooth 복귀 명령 전송 완료: ${formattedSpace}`);
+        } catch (bluetoothError) {
+          console.error("❌ Bluetooth 복귀 실패!", bluetoothError);
+          alert("⚠️ Bluetooth 복귀 명령 전송 중 오류가 발생했습니다.");
+          return;
+        }
+      }
+  
+      alert("✅ 상자 복귀가 완료되었습니다!");
+      setBoxReturnVisible(false); // ✅ 복귀 후 버튼 숨김
+    } catch (error) {
+      console.error("❌ 상자 복귀 실패!", error);
+      alert("⚠️ 상자 복귀 중 오류가 발생했습니다.");
+    }
+  };
+  
+  
+
   return (
-    <div className="ml-[180px] p-6 bg-black min-h-screen text-white flex space-x-6">
+    <div className="ml-[140px] p-6 flex space-x-6 justify-center h-screen items-center">
       {/* 왼쪽: 검색 및 물품 목록 */}
       <div className="flex flex-col space-y-4">
         <input
@@ -172,20 +223,20 @@ export default function OutboundPage() {
           placeholder="검색"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border p-2 rounded w-[250px] text-black mt-8"
+          className="border p-2 rounded sm:w-[250px] md:w-[300px] lg:w-[400px] text-black text-base sm:text-lg md:text-xl"
         />
 
         {/* 출고 가능 물품 목록 (h-[300px] 고정) */}
-        <div className="border p-4 w-[250px] h-[400px] overflow-auto">
-          <h2 className="font-bold mb-2">출고 가능 물품</h2>
-          <div className="grid grid-cols-3 text-center font-semibold">
+        <div className="border p-4 w-full sm:w-[250px] md:w-[300px] lg:w-[400px] h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] overflow-auto">
+          <h2 className="font-bold mb-2 text-base sm:text-lg md:text-xl">출고 가능 물품</h2>
+          <div className="grid grid-cols-3 text-center font-semibold text-base sm:text-lg md:text-xl">
             <span>물품이름</span>
             <span>개수</span>
             <span>선택</span>
           </div>
           {filteredItems.length > 0 ? (
             filteredItems.map((item, index) => (
-              <div key={index} className="grid grid-cols-3 text-center mt-2">
+              <div key={index} className="grid grid-cols-3 text-center mt-2 text-base sm:text-lg md:text-xl">
                 <span>{item.name}</span>
                 <span>{item.quantity}</span>
                 <button
@@ -197,7 +248,7 @@ export default function OutboundPage() {
               </div>
             ))
           ) : (
-            <p className="text-gray-400 text-center mt-2">검색 결과 없음</p>
+            <p className="text-gray-400 text-center mt-2 text-base sm:text-lg md:text-xl">검색 결과 없음</p>
           )}
         </div>
 
@@ -231,8 +282,8 @@ export default function OutboundPage() {
       </div>
 
       {/* 선택된 물품 목록 (높이를 출고 가능 물품과 동일하게 맞춤) */}
-      <div className="border p-4 w-[250px] h-[400px] overflow-auto mt-24">
-        <h2 className="font-bold mb-2">선택된 물품</h2>
+      <div className="border p-4 text-base sm:text-lg md:text-xl sm:w-[250px] md:w-[300px] lg:w-[400px] h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] overflow-auto">
+        <h2 className="font-bold mb-2 text-base sm:text-lg md:text-xl">선택된 물품</h2>
         {selectedItems.length > 0 ? (
           selectedItems.map((item, index) => (
             <div key={index} className="flex justify-between items-center">
@@ -240,7 +291,7 @@ export default function OutboundPage() {
                 {item.name} ({item.quantity})
               </span>
               <button
-                className="text-red-500 text-sm"
+                className="text-red-500 text-base sm:text-lg md:text-xl"
                 onClick={() => handleRemoveItem(index)}
               >
                 제거
@@ -248,32 +299,42 @@ export default function OutboundPage() {
             </div>
           ))
         ) : (
-          <p className="text-gray-400">선택된 물품이 없습니다.</p>
+          <p className="text-gray-400 text-base sm:text-lg md:text-xl">선택된 물품이 없습니다.</p>
         )}
       </div>
 
       {/* 버튼 그룹 */}
-      <div className="grid grid-cols-2 gap-x-1 gap-y-2 justify-items-center mt-24">
-        <button className="w-20 h-20 bg-blue-600 text-white rounded-full"
+      <div className="flex flex-col justify-end space-y-3">
+        <button className="px-6 py-3 bg-gray-600 text-white font-bold text-lg rounded-lg shadow-md"
         onClick={handleDeleteBox}>
           출고
         </button>
-        <button className="w-20 h-20 bg-blue-600 text-white rounded-full">
-          복귀
-        </button>
-        <button className="w-20 h-20 bg-gray-500 text-white rounded-full">
+        {/* ✅ 출고 후에만 "상자 복귀" 버튼이 표시됨 */}
+        {boxReturnVisible && (
+          <button
+            className="px-6 py-3 bg-blue-600 text-white font-bold text-lg rounded-lg shadow-md"
+            onClick={() => {
+              onClick={handleReturnBox};
+              console.log("📦 상자 복귀 실행!");
+              setBoxReturnVisible(false); // ✅ 복귀 후 버튼 숨기기
+            }}
+          >
+            상자복귀
+          </button>
+        )}
+        <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
           일시중지
         </button>
-        <button className="w-20 h-20 bg-gray-500 text-white rounded-full">
+        <button className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md">
           다시출발
         </button>
-        <button className="w-20 h-20 bg-gray-500 text-white rounded-full">
+        <button className="x-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md">
           복귀
         </button>
 
         {/* 비상정지 버튼 (클릭 시 빨간색으로 변경) */}
         <button
-          className={`w-20 h-20 rounded-full ${
+          className={`px-6 py-3 text-white font-bold text-lg rounded-lg shadow-md ${
             emergencyStop ? "bg-red-600 text-white" : "bg-gray-300 text-gray-500"
           }`}
           onClick={() => setEmergencyStop(!emergencyStop)}
