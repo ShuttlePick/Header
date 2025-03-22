@@ -1,7 +1,7 @@
 "use client"; // Next.js 클라이언트 컴포넌트
 
 import { shuttlepickFirestore } from "@/firebase";
-import { doc, getDoc } from "@firebase/firestore";
+import { deleteDoc, deleteField, doc, getDoc } from "@firebase/firestore";
 import { useState, useEffect } from "react";
 
 export default function Monitoring() {
@@ -92,18 +92,73 @@ export default function Monitoring() {
   // 🔥 필터링된 입출고 내역
   const filteredData = [...inboundData, ...outboundData]
   .filter((item) => {
-    if (filterType === "전체") return true; // 전체 보기
-    return item.type === filterType; // "입고" or "출고" 필터링
+    if (filterType === "전체") return true;
+    return item.type === filterType;
   })
-  .filter((item) => item.name.includes(searchQuery)); // 검색 필터 적용
+  .filter((item) => item.name.includes(searchQuery))
+  .sort((a, b) => new Date(b.timestamp ?? 0) - new Date(a.timestamp ?? 0));
+
+
+  const convertToKST = (isoString) => {
+    if (!isoString) return "";
+  
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return ""; // ← 날짜가 잘못된 경우 빈 문자열로 처리
+  
+    date.setHours(date.getHours() + 9);
+    return date.toISOString().replace("T", " ").substring(0, 19);
+  };
+  
+  const handleResetStorage = async () => {
+  
+    try {
+      const floors = ["1층", "2층"];
+      for(const floor of floors) {
+        const docRef = doc(shuttlepickFirestore, "storageData", floor);
+        
+        await deleteDoc(docRef);
+      }
+  
+      alert("✅ 창고가 초기화되었습니다!");
+      // 상태도 초기화
+      setStorageData({
+        1: { A1: null, A2: null, B1: null, B2: null },
+        2: { A1: null, A2: null, B1: null, B2: null }
+      });
+    } catch (error) {
+      console.error("❌ 창고 초기화 실패:", error);
+      alert("⚠️ 창고 초기화 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleResetReceipt = async () => {
+  
+    try {
+        const inboundDocRef = doc(shuttlepickFirestore, "inboundData", "inboundData");
+        const outboundDocRef = doc(shuttlepickFirestore, "outboundData", "outboundData");
+        
+        await deleteDoc(inboundDocRef);
+        await deleteDoc(outboundDocRef);
+
+        setInboundData([]);
+        setOutboundData([]);
+  
+      alert("✅ 내역이 초기화되었습니다!");
+      // 상태도 초기화
+    } catch (error) {
+      console.error("❌ 내역 초기화 실패:", error);
+      alert("⚠️ 내역 초기화 중 오류가 발생했습니다.");
+    }
+  };
+  
 
   return (
-    <div className="ml-[140px] p-6 flex space-x-6 justify-center items-center h-screen">
+    <div className="ml-[140px] p-6 flex flex-col space-y-6 justify-center items-center h-screen md:flex-row md:space-x-6">
       {/* ✅ 층 선택 버튼 */}
-      <div className="flex flex-col space-y-4">
+      <div className="flex flex-row md:flex-col space-x-4 md:space-y-4">
         <button
           className={`px-6 py-3 rounded-lg text-lg font-bold shadow-md ${
-            selectedFloor === "1층" ? "bg-blue-600 text-white" : "bg-gray-300 text-black"
+            selectedFloor === 1 ? "bg-blue-600 text-white" : "bg-gray-300 text-black"
           }`}
           onClick={() => setSelectedFloor(1)}
         >
@@ -111,7 +166,7 @@ export default function Monitoring() {
         </button>
         <button
           className={`px-6 py-3 rounded-lg text-lg font-bold shadow-md ${
-            selectedFloor === "2층" ? "bg-blue-600 text-white" : "bg-gray-300 text-black"
+            selectedFloor === 2 ? "bg-blue-600 text-white" : "bg-gray-300 text-black"
           }`}
           onClick={() => setSelectedFloor(2)}
         >
@@ -120,13 +175,17 @@ export default function Monitoring() {
       </div>
 
       {/* ✅ A/B열 공간 */}
-      <div className="flex flex-col space-y-4">
+      <div className="flex flex-col space-y-4 items-end">
         <div className="grid grid-cols-2 gap-4">
           {["A1", "A2", "B1", "B2"].map((space) =>
             (
               <div
                 key={space}
-                className="border p-6 rounded-lg text-center text-lg font-semibold bg-gray-200 text-black"
+                className="border p-6 rounded-lg
+                flex flex-col justify-center items-center  
+                text-lg sm:text-lg md:text-xl font-semibold bg-gray-200 text-black
+                w-[100px] sm:w-[150px] md:w-[180px] lg:w-[350px] 
+                h-[80px] sm:h-[100px] md:h-[120px] lg:h-[200px]"
               >
                 <h2>{space} 공간</h2>
                 {storageData[selectedFloor][space] ? (
@@ -140,6 +199,8 @@ export default function Monitoring() {
               </div>
             ))}
         </div>
+        <button className="w-[150px] mt-4 px-4 py-3 bg-gray-200 text-gray-500 rounded-lg font-bold hover:bg-red-500 hover:text-white"
+        onClick={handleResetStorage}>창고 초기화</button>
       </div>
 
       {/* ✅ 입출고 내역 */}
@@ -156,7 +217,7 @@ export default function Monitoring() {
               <span className="text-lg">▼</span>
             </button>
             {dropdownOpen && (
-              <div className="absolute top-12 right-0 bg-white shadow-md rounded-lg w-24 text-center text-black">
+              <div className="absolute top-12 right-0 bg-white shadow-md rounded-lg w-24 text-center text-black z-50">
                 <button
                   className="block w-full px-4 py-2 hover:bg-gray-200"
                   onClick={() => {
@@ -199,13 +260,13 @@ export default function Monitoring() {
         />
 
         {/* ✅ 필터링된 입출고 내역 */}
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 space-y-2 max-h-[300px] md:max-h-[500px] overflow-auto">
           {filteredData
             // .filter((item) => item.name.includes(searchQuery)) // 🔍 검색 필터
             .map((item, index) => (
               <div
                 key={index}
-                className={`flex items-center border p-3 rounded-lg ${
+                className={`relative group flex items-center border p-3 rounded-lg ${
                   item.type === "입고" ? "border-green-500" : "border-red-500"
                 }`}
               >
@@ -218,9 +279,20 @@ export default function Monitoring() {
                 </div>
                 <span className="ml-2 flex-grow">{item.name}</span>
                 <span>{item.quantity}개</span>
+                {item.timestamp && (
+                  <div className="absolute left-1/2 -translate-x-1/2 px-2 py-1 text-xs rounded bg-gray-700 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 whitespace-nowrap">
+                  {convertToKST(item.timestamp)}
+                  </div>
+                )}
               </div>
             ))}
         </div>
+
+        <div className="flex justify-end">
+          <button className="mt-6 px-3 py-3 bg-gray-200 text-gray-500 text-sm rounded-lg font-bold hover:bg-gray-400 hover:text-white"
+          onClick={handleResetReceipt}>내역 초기화</button>
+        </div>
+
       </div>
     </div>
   );

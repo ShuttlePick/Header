@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import BluetoothService from "../components/bluetoothService"; // ✅ BluetoothService 불러오기 (Bluetooth 통신 처리)
 import { shuttlepickFirestore } from "@/firebase";
-import { addDoc, arrayUnion, collection, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from "firebase/firestore";
 
 // ✅ 입고 페이지 컴포넌트
 export default function InboundPage() {
@@ -131,11 +131,11 @@ export default function InboundPage() {
 
     if (inboundSnap.exists()) {
       await updateDoc(washingtonRef, {
-        inboundData: arrayUnion({ id: itemId, name: itemName, quantity: Number(quantity) })
+        inboundData: arrayUnion({ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() })
       }, {merge:true});
     } else {
       await setDoc(washingtonRef, {
-        inboundData: [{ id: itemId, name: itemName, quantity: Number(quantity) }]
+        inboundData: [{ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() }]
       });
     }
 
@@ -271,6 +271,8 @@ export default function InboundPage() {
         >
           비상정지
         </button>
+
+        {/* <button>초기화</button> */}
       </div>
     </div>
   );
