@@ -155,7 +155,7 @@ export default function Monitoring() {
   return (
     <div className="ml-[140px] p-6 flex flex-col space-y-6 justify-center items-center h-screen md:flex-row md:space-x-6">
       {/* ✅ 층 선택 버튼 */}
-      <div className="flex flex-row md:flex-col space-x-4 md:space-y-4">
+      <div className="flex flex-col space-y-4 mb-4">
         <button
           className={`px-6 py-3 rounded-lg text-lg font-bold shadow-md ${
             selectedFloor === 1 ? "bg-blue-600 text-white" : "bg-gray-300 text-black"
@@ -177,7 +177,7 @@ export default function Monitoring() {
       {/* ✅ A/B열 공간 */}
       <div className="flex flex-col space-y-4 items-end">
         <div className="grid grid-cols-2 gap-4">
-          {["A1", "A2", "B1", "B2"].map((space) =>
+          {["A1", "B1", "A2", "B2"].map((space) =>
             (
               <div
                 key={space}
