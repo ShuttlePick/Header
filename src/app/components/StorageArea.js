@@ -2,6 +2,8 @@
 
 "use client";
 
+import { shuttlepickFirestore } from "@/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
 
 function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageData, setStorageData }) {
@@ -10,28 +12,53 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
     2: ["A1", "B1", "A2", "B2"]
   });
 
-  useEffect(() => {
-    // ✅ 초기화 시 저장공간 업데이트
-    setStorageData((prev) => ({
-      ...prev,
-      [selectedFloor]: storageSpaces[selectedFloor].reduce((acc, space) => {
-        if (!acc[space]) {
-          acc[space] = null;
-        }
-        return acc;
-      }, prev[selectedFloor] || {})
-    }));
-  }, [storageSpaces, selectedFloor]);
+  // useEffect(() => {
+  //   // ✅ 초기화 시 저장공간 업데이트
+  //   setStorageData((prev) => ({
+  //     ...prev,
+  //     [selectedFloor]: storageSpaces[selectedFloor].reduce((acc, space) => {
+  //       if (!acc[space]) {
+  //         acc[space] = null;
+  //       }
+  //       return acc;
+  //     }, prev[selectedFloor] || {})
+  //   }));
+  // }, [storageSpaces, selectedFloor]);
 
-  const handleAddSpace = () => {
+  useEffect(() => {
+  const fetchSpaces = async () => {
+    const floorDocRef = doc(shuttlepickFirestore, "spaceMeta", `${selectedFloor}층`);
+    const docSnap = await getDoc(floorDocRef);
+
+    if (docSnap.exists()) {
+      const spaceList = docSnap.data().spaces;
+      setStorageSpaces((prev) => ({
+        ...prev,
+        [selectedFloor]: spaceList
+      }));
+    }
+  };
+
+  fetchSpaces();
+}, [selectedFloor]);
+
+
+  const handleAddSpace = async () => {
     const currentSpaces = storageSpaces[selectedFloor];
     const nextIndex = Math.floor(currentSpaces.length / 2) + 1;
     const newSpaces = [`A${nextIndex}`, `B${nextIndex}`];
 
+    const updatedSpaces = [...currentSpaces, ...newSpaces];
+
     setStorageSpaces((prev) => ({
       ...prev,
-      [selectedFloor]: [...prev[selectedFloor], ...newSpaces]
+      // [selectedFloor]: [...prev[selectedFloor], ...newSpaces]
+      [selectedFloor]: updatedSpaces
     }));
+
+    // DB 추가
+    const floorDocRef = doc(shuttlepickFirestore, "spaceMeta", `${selectedFloor}층`);
+    await setDoc(floorDocRef, { spaces: updatedSpaces });
 
     setStorageData((prev) => ({
       ...prev,
@@ -56,11 +83,11 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
             className={`border p-6 cursor-pointer rounded-lg flex flex-col justify-center items-center text-center text-base sm:text-lg md:text-xl font-semibold 
               w-[100px] sm:w-[150px] md:w-[180px] lg:w-[350px] 
               h-[80px] sm:h-[100px] md:h-[120px] lg:h-[200px]
-              ${selectedSpace === (selectedFloor === 2 ? `${space}_2F` : space) ? "bg-green-400 text-white" : "bg-gray-200 text-black"
+              ${selectedSpace === (selectedFloor === 2 ? `${space}` : space) ? "bg-green-400 text-white" : "bg-gray-200 text-black"
             }`}
-            onClick={() => setSelectedSpace(selectedFloor === 2 ? `${space}_2F` : space)}
+            onClick={() => setSelectedSpace(selectedFloor === 2 ? `${space}` : space)}
           >
-            <h2>{selectedFloor === 2 ? `${space}_2F` : space} 공간</h2>
+            <h2>{selectedFloor === 2 ? `${space}` : space} 공간</h2>
             {storageData[selectedFloor][space] ? (
               <p className="mt-2">
                 {storageData[selectedFloor][space].name} - {storageData[selectedFloor][space].quantity}개
