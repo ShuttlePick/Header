@@ -170,12 +170,60 @@ export default function InboundPage() {
 
     try {
       await BluetoothService.sendEmergencyCommand(emergencyState);
-      setIsEmergency(!isEmergency); // ✅ 비상정지 상태 업데이트
+      
+      // ✅ 여기서 바로 상태를 업데이트
+      setIsEmergency((prevState) => !prevState);
+      
     } catch (error) {
       console.error("❌ 비상정지 실패:", error);
       alert("⚠️ 비상정지를 수행하지 못했습니다.");
     }
   };
+
+  /**
+   * ✅ 일시중지 핸들러
+   * - 일시중지 버튼을 누르면 Bluetooth로 "S" 명령어를 전송
+   */
+  const handlePause = async () => {
+    try {
+      await BluetoothService.sendPauseCommand();
+      alert("✅ 일시중지 명령이 전송되었습니다.");
+    } catch (error) {
+      console.error("❌ 일시중지 명령 전송 실패:", error);
+      alert("⚠️ 일시중지 명령을 전송하지 못했습니다.");
+    }
+  };
+
+  /**
+   * ✅ 다시출발 핸들러
+   * - 다시출발 버튼을 누르면 Bluetooth로 "C" 명령어를 전송
+   */
+  const handleResume = async () => {
+    try {
+      await BluetoothService.sendResumeCommand();
+      alert("✅ 다시출발 명령이 전송되었습니다.");
+    } catch (error) {
+      console.error("❌ 다시출발 명령 전송 실패:", error);
+      alert("⚠️ 다시출발 명령을 전송하지 못했습니다.");
+    }
+  };
+
+
+  /**
+   * ✅ 복귀 핸들러
+   * - 복귀 버튼을 누르면 Bluetooth로 "B" 명령어를 전송
+   */
+  const handleReturn = async () => {
+    try {
+      await BluetoothService.sendReturnCommand();
+      alert("✅ 복귀 명령이 전송되었습니다.");
+    } catch (error) {
+      console.error("❌ 복귀 명령 전송 실패:", error);
+      alert("⚠️ 복귀 명령을 전송하지 못했습니다.");
+    }
+  };
+
+
 
   return (
     <div className="ml-[140px] p-6 flex space-x-6 justify-center items-center h-screen">
@@ -252,15 +300,26 @@ export default function InboundPage() {
           </button>
         )} */}
 
-        <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
+        <button
+          className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={handlePause}
+        >
           일시중지
         </button>
-        <button className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md">
+        <button
+          className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={handleResume}
+        >
           다시출발
         </button>
-        <button className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md">
+
+        <button
+          className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={handleReturn}
+        >
           복귀
         </button>
+
 
         {/* ✅ 비상정지 버튼 */}
         <button
@@ -269,8 +328,9 @@ export default function InboundPage() {
           }`}
           onClick={handleEmergency}
         >
-          비상정지
+          {isEmergency ? "비상정지 해제" : "비상정지"}
         </button>
+
 
         {/* <button>초기화</button> */}
       </div>

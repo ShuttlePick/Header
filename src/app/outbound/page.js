@@ -13,6 +13,8 @@ export default function OutboundPage() {
   const [emergencyStop, setEmergencyStop] = useState(false);
   const [allItems, setAllItems] = useState([]);
   const [boxReturnVisible, setBoxReturnVisible] = useState(false); // ✅ "상자 복귀" 버튼 표시 여부 상태
+  // ✅ 비상정지 상태 추가
+  const [isEmergency, setIsEmergency] = useState(false);
 
   // 페이지 로드할 때, firesotre에서 데이터 가져오기
   const fetchAllItems = () => {
@@ -212,7 +214,68 @@ export default function OutboundPage() {
     }
   };
   
+  /**
+     * ✅ 비상정지 핸들러
+     * - 버튼을 누르면 비상정지 명령을 STM32로 전송
+     */
+    const handleEmergency = async () => {
+      const emergencyState = isEmergency ? 0 : 1; // 1: 정지, 0: 해제
+      console.log(`🚨 비상정지 요청 - Emergency: ${emergencyState}`);
   
+      try {
+        await BluetoothService.sendEmergencyCommand(emergencyState);
+        
+        // ✅ 여기서 바로 상태를 업데이트
+        setIsEmergency((prevState) => !prevState);
+        
+      } catch (error) {
+        console.error("❌ 비상정지 실패:", error);
+        alert("⚠️ 비상정지를 수행하지 못했습니다.");
+      }
+    };
+  
+    /**
+     * ✅ 일시중지 핸들러
+     * - 일시중지 버튼을 누르면 Bluetooth로 "S" 명령어를 전송
+     */
+    const handlePause = async () => {
+      try {
+        await BluetoothService.sendPauseCommand();
+        alert("✅ 일시중지 명령이 전송되었습니다.");
+      } catch (error) {
+        console.error("❌ 일시중지 명령 전송 실패:", error);
+        alert("⚠️ 일시중지 명령을 전송하지 못했습니다.");
+      }
+    };
+  
+    /**
+     * ✅ 다시출발 핸들러
+     * - 다시출발 버튼을 누르면 Bluetooth로 "C" 명령어를 전송
+     */
+    const handleResume = async () => {
+      try {
+        await BluetoothService.sendResumeCommand();
+        alert("✅ 다시출발 명령이 전송되었습니다.");
+      } catch (error) {
+        console.error("❌ 다시출발 명령 전송 실패:", error);
+        alert("⚠️ 다시출발 명령을 전송하지 못했습니다.");
+      }
+    };
+  
+  
+    /**
+     * ✅ 복귀 핸들러
+     * - 복귀 버튼을 누르면 Bluetooth로 "B" 명령어를 전송
+     */
+    const handleReturn = async () => {
+      try {
+        await BluetoothService.sendReturnCommand();
+        alert("✅ 복귀 명령이 전송되었습니다.");
+      } catch (error) {
+        console.error("❌ 복귀 명령 전송 실패:", error);
+        alert("⚠️ 복귀 명령을 전송하지 못했습니다.");
+      }
+    };
 
   return (
     <div className="ml-[140px] p-6 flex space-x-6 justify-center h-screen items-center">
@@ -322,24 +385,35 @@ export default function OutboundPage() {
             상자복귀
           </button>
         )}
-        <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
+                <button
+          className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={handlePause}
+        >
           일시중지
         </button>
-        <button className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md">
+        <button
+          className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={handleResume}
+        >
           다시출발
         </button>
-        <button className="x-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md">
+
+        <button
+          className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={handleReturn}
+        >
           복귀
         </button>
 
-        {/* 비상정지 버튼 (클릭 시 빨간색으로 변경) */}
+
+        {/* ✅ 비상정지 버튼 */}
         <button
           className={`px-6 py-3 text-white font-bold text-lg rounded-lg shadow-md ${
-            emergencyStop ? "bg-red-600 text-white" : "bg-gray-300 text-gray-500"
+            isEmergency ? "bg-red-600" : "bg-gray-400"
           }`}
-          onClick={() => setEmergencyStop(!emergencyStop)}
+          onClick={handleEmergency}
         >
-          비상정지
+          {isEmergency ? "비상정지 해제" : "비상정지"}
         </button>
       </div>
     </div>

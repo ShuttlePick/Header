@@ -3,8 +3,8 @@
 export default class BluetoothService {
   // ✅ 공간 매핑: 창고의 공간을 박스 번호로 변환
   static spaceMapping = {
-    "A1": 1, "A2": 2, "B1": 3, "B2": 4,
-    "A1_2F": 5, "A2_2F": 6, "B1_2F": 7, "B2_2F": 8
+    "A1": 1, "A2": 3, "B1": 2, "B2": 4,
+    "A1_2F": 5, "A2_2F": 7, "B1_2F": 6, "B2_2F": 8
   };
 
   // ✅ Bluetooth characteristic 저장
@@ -65,5 +65,37 @@ export default class BluetoothService {
 
     console.log("🚨 전송할 비상정지 명령:", command);
     await this.sendBluetoothData(command);
+  }
+   // ✅ 일시중지 명령어 전송
+  static async sendPauseCommand() {
+    try {
+      console.log("⏸️ 일시중지 명령 전송: S");
+      await this.sendBluetoothData("S");
+      console.log("✅ 일시중지 완료");
+    } catch (error) {
+      console.error("❌ 일시중지 실패:", error);
+    }
+  }
+
+  // ✅ 다시출발 명령어 전송
+  static async sendResumeCommand() {
+    try {
+      console.log("▶️ 다시출발 명령 전송: C");
+      await this.sendBluetoothData("C");
+      console.log("✅ 다시출발 완료");
+    } catch (error) {
+      console.error("❌ 다시출발 실패:", error);
+    }
+  }
+
+  // ✅ 복귀 명령어 전송
+  static async sendReturnCommand() {
+    try {
+      console.log("↩️ 복귀 명령 전송: B");
+      await this.sendBluetoothData("B");
+      console.log("✅ 복귀 완료");
+    } catch (error) {
+      console.error("❌ 복귀 실패:", error);
+    }
   }
 }
