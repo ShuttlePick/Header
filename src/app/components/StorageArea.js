@@ -12,47 +12,42 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
     2: ["A1", "B1", "A2", "B2"]
   });
 
-  // useEffect(() => {
-  //   // ✅ 초기화 시 저장공간 업데이트
-  //   setStorageData((prev) => ({
-  //     ...prev,
-  //     [selectedFloor]: storageSpaces[selectedFloor].reduce((acc, space) => {
-  //       if (!acc[space]) {
-  //         acc[space] = null;
-  //       }
-  //       return acc;
-  //     }, prev[selectedFloor] || {})
-  //   }));
-  // }, [storageSpaces, selectedFloor]);
 
+  // '공간추가' 새로 생긴 공간 불러오기
   useEffect(() => {
   const fetchSpaces = async () => {
     const floorDocRef = doc(shuttlepickFirestore, "spaceMeta", `${selectedFloor}층`);
     const docSnap = await getDoc(floorDocRef);
 
     if (docSnap.exists()) {
-      const spaceList = docSnap.data().spaces;
+      // .data() : Firestore 문서 데이터를 JS 객체로 변환
+      // spaces 필드에 해당하는 데이터 꺼냄. (내가 배열 필드 이름 spaces로 함)
+      const spaceList = docSnap.data().spaces; 
       setStorageSpaces((prev) => ({
         ...prev,
+        // storageSpaces 변수에 해당 층에 추가된 데이터 추가
         [selectedFloor]: spaceList
       }));
     }
   };
 
   fetchSpaces();
-}, [selectedFloor]);
+  }, [selectedFloor]); // 층 바뀔때마다 fetch
 
 
+  // '공간추가' 버튼 클릭시
   const handleAddSpace = async () => {
+    // ex) 현재 1층이고, 렉 3개면 이면 ["A1", "B1", "A2", "B2", "A3", "B3"]
     const currentSpaces = storageSpaces[selectedFloor];
+    // ex) 6/2 + 1 = 4 -> 다음렉은 4번임을 뜻함함
     const nextIndex = Math.floor(currentSpaces.length / 2) + 1;
+    // ex) "A4", "B4" 추가
     const newSpaces = [`A${nextIndex}`, `B${nextIndex}`];
-
     const updatedSpaces = [...currentSpaces, ...newSpaces];
 
     setStorageSpaces((prev) => ({
       ...prev,
-      // [selectedFloor]: [...prev[selectedFloor], ...newSpaces]
+      // storageSpaces 변수에 해당 층에 추가된 공간까지 업데이트
       [selectedFloor]: updatedSpaces
     }));
 

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import BluetoothService from "../components/bluetoothService"; // ✅ BluetoothService 불러오기 (Bluetooth 통신 처리)
-import { shuttlepickFirestore } from "@/firebase";
+import { shuttlepickFirestore } from "@/firebase"; // firebase db 연결
+import StorageArea from "../components/StorageArea";
 import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from "firebase/firestore";
 
 // ✅ 입고 페이지 컴포넌트
@@ -170,60 +171,12 @@ export default function InboundPage() {
 
     try {
       await BluetoothService.sendEmergencyCommand(emergencyState);
-      
-      // ✅ 여기서 바로 상태를 업데이트
-      setIsEmergency((prevState) => !prevState);
-      
+      setIsEmergency(!isEmergency); // ✅ 비상정지 상태 업데이트
     } catch (error) {
       console.error("❌ 비상정지 실패:", error);
       alert("⚠️ 비상정지를 수행하지 못했습니다.");
     }
   };
-
-  /**
-   * ✅ 일시중지 핸들러
-   * - 일시중지 버튼을 누르면 Bluetooth로 "S" 명령어를 전송
-   */
-  const handlePause = async () => {
-    try {
-      await BluetoothService.sendPauseCommand();
-      alert("✅ 일시중지 명령이 전송되었습니다.");
-    } catch (error) {
-      console.error("❌ 일시중지 명령 전송 실패:", error);
-      alert("⚠️ 일시중지 명령을 전송하지 못했습니다.");
-    }
-  };
-
-  /**
-   * ✅ 다시출발 핸들러
-   * - 다시출발 버튼을 누르면 Bluetooth로 "C" 명령어를 전송
-   */
-  const handleResume = async () => {
-    try {
-      await BluetoothService.sendResumeCommand();
-      alert("✅ 다시출발 명령이 전송되었습니다.");
-    } catch (error) {
-      console.error("❌ 다시출발 명령 전송 실패:", error);
-      alert("⚠️ 다시출발 명령을 전송하지 못했습니다.");
-    }
-  };
-
-
-  /**
-   * ✅ 복귀 핸들러
-   * - 복귀 버튼을 누르면 Bluetooth로 "B" 명령어를 전송
-   */
-  const handleReturn = async () => {
-    try {
-      await BluetoothService.sendReturnCommand();
-      alert("✅ 복귀 명령이 전송되었습니다.");
-    } catch (error) {
-      console.error("❌ 복귀 명령 전송 실패:", error);
-      alert("⚠️ 복귀 명령을 전송하지 못했습니다.");
-    }
-  };
-
-
 
   return (
     <div className="ml-[140px] p-6 flex space-x-6 justify-center items-center h-screen">
@@ -248,30 +201,15 @@ export default function InboundPage() {
       </div>
 
       {/* ✅ 적재 공간 UI */}
-    <div className="flex flex-col space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        {["A1", "B1", "A2", "B2"].map((space) => (
-          <div
-            key={space}
-            className={`border p-6 cursor-pointer rounded-lg flex flex-col justify-center items-center text-center text-base sm:text-lg md:text-xl font-semibold 
-              w-[100px] sm:w-[150px] md:w-[180px] lg:w-[350px] 
-              h-[80px] sm:h-[100px] md:h-[120px] lg:h-[200px]
-              
-              ${selectedSpace === space ? "bg-green-400 text-white" : "bg-gray-200 text-black"
-            }`}
-            onClick={() => handleSelectSpace(space)}
-          >
-            <h2>{space} 공간</h2>
-            {storageData[selectedFloor][space] ? (
-              <p className="mt-2">
-                {storageData[selectedFloor][space].name} - {storageData[selectedFloor][space].quantity}개
-              </p>
-            ) : (
-              <p className="text-gray-500">비어 있음</p>
-            )}
-          </div>
-        ))}
-      </div>
+    {/* ✅ 저장 공간 컴포넌트 (StorageArea) */}
+      <StorageArea
+        selectedFloor={selectedFloor}
+        selectedSpace={selectedSpace}
+        setSelectedSpace={handleSelectSpace}
+        storageData={storageData}
+        setStorageData={setStorageData}
+      />
+
 
       {/* ✅ 입력 필드 & 입고 버튼 (boxArrived가 true일 때 표시) */}
       {boxArrived && (
@@ -285,11 +223,11 @@ export default function InboundPage() {
             </button>
         </div>
       )}
-    </div>
+    
 
 
       {/* ✅ 버튼 UI */}
-      <div className="flex flex-col justify-center space-y-3">
+        <div className="flex flex-col justify-center space-y-3">
         <button className="px-6 py-3 bg-gray-600 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleRetrieveBox}>
           상자 가져오기
         </button>
@@ -300,26 +238,15 @@ export default function InboundPage() {
           </button>
         )} */}
 
-        <button
-          className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={handlePause}
-        >
+        <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
           일시중지
         </button>
-        <button
-          className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={handleResume}
-        >
+        <button className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md">
           다시출발
         </button>
-
-        <button
-          className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={handleReturn}
-        >
+        <button className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md">
           복귀
         </button>
-
 
         {/* ✅ 비상정지 버튼 */}
         <button
@@ -328,9 +255,8 @@ export default function InboundPage() {
           }`}
           onClick={handleEmergency}
         >
-          {isEmergency ? "비상정지 해제" : "비상정지"}
+          비상정지
         </button>
-
 
         {/* <button>초기화</button> */}
       </div>
