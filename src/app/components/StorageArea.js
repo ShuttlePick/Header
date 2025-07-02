@@ -22,6 +22,8 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
     if (docSnap.exists()) {
       // .data() : Firestore 문서 데이터를 JS 객체로 변환
       // spaces 필드에 해당하는 데이터 꺼냄. (내가 배열 필드 이름 spaces로 함)
+
+      docSnap.data().spaces;
       const spaceList = docSnap.data().spaces; 
       setStorageSpaces((prev) => ({
         ...prev,
@@ -43,22 +45,27 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
     const nextIndex = Math.floor(currentSpaces.length / 2) + 1;
     // ex) "A4", "B4" 추가
     const newSpaces = [`A${nextIndex}`, `B${nextIndex}`];
+    // ["A1", "B1", "A2", "B2", "A3", "B3", "A4", "B4"]
     const updatedSpaces = [...currentSpaces, ...newSpaces];
 
     setStorageSpaces((prev) => ({
       ...prev,
       // storageSpaces 변수에 해당 층에 추가된 공간까지 업데이트
+      // ["A1", "B1", "A2", "B2", "A3", "B3", "A4", "B4"] 저장
       [selectedFloor]: updatedSpaces
     }));
 
     // DB 추가
     const floorDocRef = doc(shuttlepickFirestore, "spaceMeta", `${selectedFloor}층`);
+    // DB에 ["A1", "B1", "A2", "B2", "A3", "B3", "A4", "B4"] 저장
     await setDoc(floorDocRef, { spaces: updatedSpaces });
 
     setStorageData((prev) => ({
-      ...prev,
+      ...prev, // 기존 층별 데이터 복사
       [selectedFloor]: {
-        ...prev[selectedFloor],
+        ...prev[selectedFloor], // 선택된 층 기존 데이터 유지
+        // 새 공간 "A4", "B4" 에 각각 space: null 형태로 초기 데이터 넣어줌줌
+        // {A3: null, B3: null}
         ...newSpaces.reduce((acc, space) => {
           acc[space] = null;
           return acc;

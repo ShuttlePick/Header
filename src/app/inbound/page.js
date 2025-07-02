@@ -1,4 +1,4 @@
-"use client"; // ✅ Next.js에서 클라이언트 측에서 실행되는 컴포넌트임을 명시
+"use client";
 
 import { useEffect, useState } from "react";
 import BluetoothService from "../components/bluetoothService"; // ✅ BluetoothService 불러오기 (Bluetooth 통신 처리)
