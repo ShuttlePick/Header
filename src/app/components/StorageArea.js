@@ -3,7 +3,7 @@
 "use client";
 
 import { shuttlepickFirestore } from "@/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { deleteField, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
 
 function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageData, setStorageData }) {
@@ -76,13 +76,61 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
     alert(`✅ ${newSpaces.join(", ")} 공간이 추가되었습니다.`);
   };
 
+  // 렉 삭제 함수
+  const deleteSpace = async (spaceToDelete) => {
+    const currentSpaces = storageSpaces[selectedFloor];
+
+    // A4 또는 B4가 눌렸을 때, 둘 다 제거하기 위해 index를 맞춤
+    const index = currentSpaces.indexOf(spaceToDelete);
+    const isA = spaceToDelete.startsWith("A");
+    const pairIndex = isA ? index + 1 : index - 1;
+
+    const spacePair = [spaceToDelete, currentSpaces[pairIndex]];
+
+    const updatedSpaces = currentSpaces.filter(space => !spacePair.includes(space));
+
+    // 1) 상태 업데이트: storageSpaces
+    setStorageSpaces((prev) => ({
+      ...prev,
+      [selectedFloor]: updatedSpaces
+    }));
+
+    // 2) DB 업데이트: spaceMeta
+    const floorDocRef = doc(shuttlepickFirestore, "spaceMeta", `${selectedFloor}층`);
+    await setDoc(floorDocRef, { spaces: updatedSpaces });
+
+    // 3) Firestore: storageData에서 공간 필드 삭제
+    const dataDocRef = doc(shuttlepickFirestore, "storageData", `${selectedFloor}층`);
+    const deleteOps = {};
+    spacePair.forEach((space) => {
+      deleteOps[space] = deleteField(); // 필드를 삭제하는 명령
+    });
+    await updateDoc(dataDocRef, deleteOps);
+
+    // 4) 상태 업데이트: storageData
+    setStorageData((prev) => {
+      const updatedData = { ...prev[selectedFloor] };
+      spacePair.forEach(space => {
+        delete updatedData[space];
+      });
+
+      return {
+        ...prev,
+        [selectedFloor]: updatedData
+      };
+    });
+
+    alert(`🗑️ ${spacePair.join(", ")} 공간이 삭제되었습니다.`);
+  };
+
+
   return (
-    <div className="flex flex-col space-y-4 max-h-[80vh] overflow-auto">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-col space-y-4">
+      <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-auto">
         {storageSpaces[selectedFloor].map((space) => (
           <div
             key={space}
-            className={`border p-6 cursor-pointer rounded-lg flex flex-col justify-center items-center text-center text-base sm:text-lg md:text-xl font-semibold 
+            className={`relative border p-6 cursor-pointer rounded-lg flex flex-col justify-center items-center text-center text-base sm:text-lg md:text-xl font-semibold 
               w-[100px] sm:w-[150px] md:w-[180px] lg:w-[350px] 
               h-[80px] sm:h-[100px] md:h-[120px] lg:h-[200px]
               ${selectedSpace === (selectedFloor === 2 ? `${space}` : space) ? "bg-green-400 text-white" : "bg-gray-200 text-black"
@@ -97,6 +145,13 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
             ) : (
               <p className="text-gray-500">비어 있음</p>
             )}
+            <p className="absolute top-0 right-0 z-15 p-4"
+              onClick={(e) => {
+                e.stopPropagation(); //부모 div 클릭 막기
+                deleteSpace(space);
+              }}
+            >&#10005;</p>	
+
           </div>
         ))}
       </div>
