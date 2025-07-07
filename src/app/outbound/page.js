@@ -134,7 +134,7 @@ export default function OutboundPage() {
 
         const outboundSnap = await getDoc(washingtonRef);
 
-        if(inboundSnap.exists()) {
+        if(outboundSnap.exists()) {
           await updateDoc(washingtonRef, {
             outboundData: arrayUnion({id: itemId++, name: item.name, quantity: item.quantity, timestamp: new Date().toISOString()})  // 저장할 데이터
           }, { merge: true });
