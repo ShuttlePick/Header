@@ -7,31 +7,40 @@ import BluetoothService from "../components/bluetoothService"; // ✅ Bluetooth 
 
 export default function OutboundPage() {
   const [searchQuery, setSearchQuery] = useState("");
+
+  // 사용자가 선택한 아이템
   const [selectedItem, setSelectedItem] = useState(null);
+  // 사용자가 정한 수량
   const [itemQuantity, setItemQuantity] = useState(1);
+  // 사용자가 선택한 복수 아이템
   const [selectedItems, setSelectedItems] = useState([]);
+
   const [emergencyStop, setEmergencyStop] = useState(false);
   const [allItems, setAllItems] = useState([]);
   const [boxReturnVisible, setBoxReturnVisible] = useState(false); // ✅ "상자 복귀" 버튼 표시 여부 상태
   // ✅ 비상정지 상태 추가
   const [isEmergency, setIsEmergency] = useState(false);
 
-  // 페이지 로드할 때, firesotre에서 데이터 가져오기
+  // ✅ 페이지 로드할 때, storageData에서 데이터 가져오기----------------
   const fetchAllItems = () => {
-      const collectionRef = collection(shuttlepickFirestore, "storageData");
+      const collectionRef = collection(shuttlepickFirestore, "storageData"); // storageData / 1층(문서),2층(문서) 정보 가져오기
 
+      // firestore의 실시간 리스너 등록
+      // onSnapshot : 컬렉션의 데이터에 변화가 생기면 자동으로 콜백
       const unsubscribe = onSnapshot(collectionRef, (querySnapshot) => {
         let items = [];
 
-        querySnapshot.forEach((doc) => {
-          const floor = doc.id; // "1층", "2층" 같은 문서 ID
-          const data = doc.data();
+        querySnapshot.forEach((doc) => { // storageData 컬렉션의 모든 문서 스냅샷들 =  "1층", "2층", 데이터들을 말함.
+          const floor = doc.id; // 문서 ID("1층", "2층") 가져오기
+          const data = doc.data(); // 문서 데이터 객체 가져오기
     
           // 각 필드(A1, A2, B1, B2)를 하나씩 변환
           Object.keys(data).forEach((space) => {
+            // item 배열 변수에 각 장소에 있는 데이터(이름, 수량) 저장
             const item = data[space];
     
-            if (item && item.name && item.quantity !== undefined) {
+            // 그 item 배열들을 items 배열 변수에 저장
+            if (item && item.name && item.quantity !== undefined) { // 데이터 있으면
               items.push({
                 id: `${floor}-${space}`, // 예: "1층-A1"
                 name: item.name,
@@ -41,33 +50,17 @@ export default function OutboundPage() {
           });
         });
     
-        setAllItems(items); // 상태 업데이트
+        setAllItems(items); // 전체 데이터 상태 업데이트
         console.log("✅ 실시간 Firestore 데이터 업데이트!", items);
       });
 
-    return unsubscribe;
+    return unsubscribe; // 컴포넌트 어마운트 시 Firestore 리스너 해제 (메모리 누수 방지)
   };
 
   useEffect(()=> {
     const unsubscribe = fetchAllItems();
     return () => unsubscribe();
-  }, []);
-
-  // {
-  //   "1층": {
-  //     "A1": { "name": "사탕", "quantity": 10 },
-  //     "A2": { "name": "과자", "quantity": 6 },
-  //     "B1": null,
-  //     "B2": null
-  //   },
-  //   "2층": {
-  //     "A1": { "name": "라면", "quantity": 7 },
-  //     "A2": { "name": "쌀", "quantity": 3 },
-  //     "B1": null,
-  //     "B2": null
-  //   }
-  // }
-  //=====> 데이터 불러오면 이런 형태로 저장됨.
+  }, []);//-------------------------------------------------------------
   
 
   const filteredItems = (allItems || []).filter((item) =>
@@ -75,28 +68,32 @@ export default function OutboundPage() {
   );
   
 
+  // ✅ 아이템 선택 핸들러
   const handleSelectItem = (item) => {
     setSelectedItem(item);
-    setItemQuantity(1);
+    setItemQuantity(1); // 선택시 기본 수량 1
   };
 
   // const handleQuantityChange = (e) => {
   //   setItemQuantity(Number(e.target.value));
   // };
 
+  // ✅ 아이템 추가 핸들러
   const handleAddItem = () => {
     if (selectedItem && itemQuantity > 0 && itemQuantity <= selectedItem.quantity) {
       setSelectedItems([...selectedItems, { ...selectedItem, quantity: itemQuantity }]);
       setSelectedItem(null);
       setItemQuantity(1);
+      console.log("선택된 아이템들 : ", selectedItems); // 다음꺼 추가하고 나서야 배열에 추가가됨.. 흠..
     }
-    console.log("선택된 아이템들 : ", selectedItems); // 다음꺼 추가하고 나서야 배열에 추가가됨.. 흠..
   };
 
+  // ✅ 아이템 제거 핸들러
   const handleRemoveItem = (index) => {
     setSelectedItems(selectedItems.filter((_, i) => i !== index));
   };
 
+  // ✅ 아이템 출고 핸들러(?)
   const handleDeleteBox = async () => {
     var itemId = 1;
 
@@ -110,7 +107,7 @@ export default function OutboundPage() {
         
         const [floor, space] = item.id.split("-");
 
-        const formattedSpace = floor === "2층" ? `${space}_2F` : space; // ✅ 2층이면 "A1" → "A1_2F" 변환
+        const formattedSpace = floor === "2층" ? `${space}_2F` : space; // 2층이면 "A1" → "A1_2F" 변환
 
         // ✅ 블루투스 출고 명령 전송 (Bluetooth가 실패하면 Firestore 업데이트 중단)
         try {
