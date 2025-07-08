@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import BluetoothService from "./bluetoothService";
 
@@ -10,12 +10,59 @@ export default function BluetoothConnect() {
   const [isConnected, setIsConnected] = useState(false);
   const [deviceName, setDeviceName] = useState("");
   const [receivedData, setReceivedData] = useState("");
+  const receiveBufferRef = useRef(""); 
+
+
+  useEffect(() => {
+    async function reconnectIfPossible() {
+      if (!navigator.bluetooth.getDevices) return;
+
+      setIsConnecting(true);
+
+      const devices = await navigator.bluetooth.getDevices();
+      if (devices.length === 0) {
+        setIsConnecting(false);
+        return;
+      }
+
+      const device = devices[0];
+      setDeviceName(device.name || "알 수 없는 장치");
+
+      if (device.gatt?.connected) {
+        console.log("🔁 자동 재연결 시작");
+
+        try {
+          const server = await device.gatt.connect(); 
+          const service = await server.getPrimaryService("0000ffe0-0000-1000-8000-00805f9b34fb");
+          const characteristic = await service.getCharacteristic("0000ffe1-0000-1000-8000-00805f9b34fb");
+
+          characteristic.removeEventListener("characteristicvaluechanged", handleCharacteristicValueChanged);
+          characteristic.addEventListener("characteristicvaluechanged", handleCharacteristicValueChanged);
+
+          await characteristic.startNotifications();
+
+          BluetoothService.setCharacteristic(characteristic);
+          setIsConnected(true);
+          console.log("✅ 자동 재연결 완료");
+        } catch (err) {
+          console.warn("❌ 자동 재연결 실패", err);
+        }
+      }
+
+      setIsConnecting(false); // 
+    }
+
+    reconnectIfPossible();
+  }, []);
+
+
+
 
   /**
    * ✅ Bluetooth 데이터 수신 핸들러
    */
   function handleCharacteristicValueChanged(event) {
-    console.log("🛠 데이터 수신 이벤트 실행됨");
+    //console.log("🛠 데이터 수신 이벤트 실행됨");
 
     const target = event.target || this;
     if (!target || !target.value) {
@@ -24,12 +71,28 @@ export default function BluetoothConnect() {
     }
 
     const rawValue = target.value;
-    console.log("📩 수신된 원본 데이터:", new Uint8Array(rawValue.buffer));  // 바이트 데이터 확인
+    //console.log("📩 수신된 원본 데이터:", new Uint8Array(rawValue.buffer));  // 바이트 데이터 확인
+    //const value = new TextDecoder().decode(rawValue);
+    //console.log("📩 Bluetooth 데이터 수신:", value);
+    //setReceivedData(value);
 
-    const value = new TextDecoder().decode(rawValue);
-    console.log("📩 Bluetooth 데이터 수신:", value);
+    const chunk = new TextDecoder().decode(rawValue); // 조각 문자열
+    console.log("📩 조각 수신:", chunk);
 
-    setReceivedData(value);
+    receiveBufferRef.current += chunk;
+
+    // 메시지 끝이 개행 문자 '\n'이라면 메시지 완성으로 간주
+    let lines = receiveBufferRef.current.split("\n");
+    while (lines.length > 1) {
+      const completeMessage = lines.shift(); // 첫 번째 줄 완성
+      if (completeMessage.trim()) {
+        console.log("전체 수신 메시지:", completeMessage);
+        setReceivedData(completeMessage); // 혹은 메시지 처리
+      }
+    }
+
+    receiveBufferRef.current = lines[0];
+
   }
 
   /**
