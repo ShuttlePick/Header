@@ -77,7 +77,7 @@ export default function BluetoothConnect() {
     //setReceivedData(value);
 
     const chunk = new TextDecoder().decode(rawValue); // 조각 문자열
-    console.log("📩 조각 수신:", chunk);
+    //console.log("📩 조각 수신:", chunk);
 
     receiveBufferRef.current += chunk;
 

@@ -241,15 +241,33 @@ export default function InboundPage() {
           상자 가져오기
         </button>
 
-        <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
+        {/* {boxArrived && (
+          <button className="px-6 py-3 bg-blue-500 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleStoreBox}>
+            입고
+          </button>
+        )} */}
+
+        <button
+          className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={() => BluetoothService.sendPauseCommand()}
+        >
           일시중지
         </button>
-        <button className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md">
+
+        <button
+          className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={() => BluetoothService.sendResumeCommand()}
+        >
           다시출발
         </button>
-        <button className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md">
+
+        <button
+          className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={() => BluetoothService.sendReturnCommand()}
+        >
           복귀
         </button>
+        
 
         {/* ✅ 비상정지 버튼 */}
         <button

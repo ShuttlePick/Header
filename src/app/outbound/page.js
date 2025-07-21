@@ -200,11 +200,25 @@ export default function OutboundPage() {
   
     try {
         const sortedItem = await Relocation(selectedItem); // 선택된 아이템 재배치 정렬
+        console.log("📦 재배치 결과 배열: ", sortedItem);
         
-        const [floor, space] = selectedItem.id.split("-"); // sortedItem
+        const [oldFloor, oldSpace] = selectedItem.id.split("-"); // selectedItem : 기존 위치
+        const [newFloor, newSpace] = sortedItem.id.split("-"); // sortedItem : 새로운 위치
+
+        // 기존 위치의 아이템 삭제
+        const oldDocRef = doc(shuttlepickFirestore, "storageData", oldFloor);
+        await updateDoc(oldDocRef, {
+          [oldSpace]: deleteField(),
+        });
+
+        // 새 위치에 추가
+        const newDocRef = doc(shuttlepickFirestore, "storageData", newFloor);
+        await setDoc(newDocRef, {
+          [newSpace] : {name: sortedItem.name, quantity: Number(sortedItem.quantity)}
+        }, {merge: true});
   
         // formattedSpace = 1,2층 반영한 공간 = STM에 보낼 공간정보
-        const formattedSpace = floor === "2층" ? `${space}_2F` : space;
+        const formattedSpace = newFloor === "2층" ? `${newSpace}_2F` : newSpace;
   
         // Bluetooth로 복귀 명령 전송
         try {
