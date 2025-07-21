@@ -8,38 +8,36 @@ import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc, T
 
 // ✅ 입고 페이지 컴포넌트
 export default function InboundPage() {
-  // ✅ 현재 선택된 층 (기본값: 1층)
-  const [selectedFloor, setSelectedFloor] = useState(1);
 
-  // ✅ 사용자가 선택한 공간 (예: A1, A2, B1, B2)
+  // 현재 선택된 층 (기본값: 1층)
+  const [selectedFloor, setSelectedFloor] = useState(1);
+  // 사용자가 선택한 공간 (예: A1, A2, B1, B2)
   const [selectedSpace, setSelectedSpace] = useState(null);
 
-  // ✅ 창고 데이터 상태 (층별 A열, B열 공간 상태 저장)
+  // 창고 데이터 상태 (층별 A열, B열 공간 상태 저장)
   const [storageData, setStorageData] = useState({
     1: { A1: null, A2: null, B1: null, B2: null }, // 1층
     2: { A1: null, A2: null, B1: null, B2: null }  // 2층
   });
-
-  // ✅ 비상정지 상태 (true: 정지, false: 정상)
-  const [isEmergency, setIsEmergency] = useState(false);
-
-  // ✅ 사용자가 입력한 상품명과 개수
+  // 사용자가 입력한 상품명과 개수
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
 
-  // ✅ 상자 도착 여부 (true: 상자가 도착하여 입고 가능)
+  // 비상정지 상태 (true : 1 : 정지, false: 0 : 정상)
+  const [isEmergency, setIsEmergency] = useState(0);
+
+  // 상자 도착 여부 (true: 상자가 도착하여 입고 가능)
   const [boxArrived, setBoxArrived] = useState(false);
 
-  /**
-   * ✅ 적재 공간 선택 핸들러
-   * 사용자가 특정 공간을 클릭하면 해당 공간이 선택됨.
-   */
+  
+   // ✅ 적재 공간 선택 핸들러
+   // 사용자가 특정 공간을 클릭하면 해당 공간이 선택됨.
   const handleSelectSpace = (space) => {
-    setSelectedSpace(space);
-    setBoxArrived(false); // 새로운 공간 선택 시 초기화
+    setSelectedSpace(space); // 선택한 공간으로 setSelectedSpace
+    setBoxArrived(false); // 새로운 공간 선택 시 상자 도착 여부 초기화
   };
 
-  // 페이지 로드할 때, firesotre에서 데이터 가져오기
+  // ✅ 페이지 로드할 때, firesotre에서 데이터 가져오기
   useEffect(() => {
     const fetchStorageData = async () => {
       try {
@@ -58,26 +56,26 @@ export default function InboundPage() {
         console.error("데이터 불러오기 실패!", error);
       }
     };
-    fetchStorageData();
+    fetchStorageData(); // storageData 가져오기
   }, [selectedFloor]); // 층 변경될 때마다 실행
 
-  /**
-   * ✅ 상자 가져오기 핸들러
-   * - 사용자가 선택한 공간에 상자를 가져오도록 STM32에 명령을 전송
-   */
+   // ✅ 상자 가져오기 핸들러
+   // - 사용자가 선택한 공간에 상자를 가져오도록 STM32에 명령을 전송
   const handleRetrieveBox = async () => {
-    if (!selectedSpace) {
+
+    if (!selectedSpace) { // 선택된 공간이 없으면
       alert("❌ 적재 공간을 먼저 선택하세요.");
       return;
     }
 
-    // ✅ 2층이면 "A1" → "A1_2F" 변환하여 STM32에 전송
-    const formattedSpace = selectedFloor === 2 ? `${selectedSpace}_2F` : selectedSpace;
+    // formattedSpace = 1,2층 반영한 공간 = STM에 보낼 공간정보
+    // 2층이면 "A1" → "A1_2F" 변환(하여 STM32에 전송)
+    const formattedSpace = selectedFloor === 2 ? `${selectedSpace}_2F` : selectedSpace; 
 
-    console.log(`📦 상자 가져오기 요청 - 층: ${selectedFloor}, 공간: ${formattedSpace}`);
+    console.log(`📦 상자 가져오기 요청 - ${selectedFloor}층, ${formattedSpace}공간`);
 
-    try {
-      await BluetoothService.sendCommand("Picking", formattedSpace);
+    try { // Bluetooth로 상자 가져오기 명령 보내기
+      await BluetoothService.sendCommand("Picking", formattedSpace); 
       setBoxArrived(true); // ✅ 상자 도착 상태 변경
       alert("✅ 상자를 가져왔습니다.");
     } catch (error) {
@@ -86,61 +84,73 @@ export default function InboundPage() {
     }
   };
 
-  /**
-   * ✅ 입고 핸들러
-   * - 사용자가 입력한 상품명과 개수를 STM32에 전송
-   */
+   // ✅ 입고 핸들러
+   // - 사용자가 입력한 상품명과 개수를 STM32에 전송
   const handleStoreBox = async () => {
     
-    if (!selectedSpace) {
+    if (!selectedSpace) { // 선택된 공간이 없으면
       alert("❌ 적재 공간을 먼저 선택하세요.");
       return;
     }
-    if (!itemName || quantity <= 0) {
+    if (!itemName || quantity <= 0) { // 물품이름, 수량 입력 안됐으면
       alert("❌ 상품명과 수량을 올바르게 입력하세요.");
       return;
     }
 
-    // ✅ 2층이면 "A1" → "A1_2F" 변환하여 STM32에 전송
-    const formattedSpace = selectedFloor === 2 ? `${selectedSpace}_2F` : selectedSpace;
+    // formattedSpace = 1,2층 반영한 공간 = STM에 보낼 공간정보
+    // 2층이면 "A1" → "A1_2F" 변환(하여 STM32에 전송)
+    const formattedSpace = selectedFloor === 2 ? `${selectedSpace}_2F` : selectedSpace; 
 
-    console.log(`📦 입고 요청 - 층: ${selectedFloor}, 공간: ${formattedSpace}, 상품: ${itemName}, 개수: ${quantity}`);
+    console.log(`📦 입고 요청 - ${selectedFloor}층, ${formattedSpace}공간 / 상품: ${itemName}, 개수: ${quantity}`);
 
-    try {
+    try { // Bluetooth로 상자 가져다놓기 명령 보내기
       await BluetoothService.sendCommand("Placing", formattedSpace);
 
-      // ✅ Firestore에 해당 공간 데이터 저장
-    const docRef = doc(shuttlepickFirestore, "storageData", `${selectedFloor}층`);
-    const washingtonRef = doc(shuttlepickFirestore, "inboundData", "inboundData");
+        // storageData, inboundData DB 접근---------------------------
+      const docRef = doc(shuttlepickFirestore, "storageData", `${selectedFloor}층`);
+      const washingtonRef = doc(shuttlepickFirestore, "inboundData", "inboundData");
 
-    await setDoc(docRef, {
-      [selectedSpace]: { name: itemName, quantity: Number(quantity) } // 저장할 데이터
-    }, { merge: true }); // 🔥 기존 데이터 유지하면서 덮어쓰기
-    
-    const inboundSnap = await getDoc(washingtonRef);
-    let itemId = 1;
+      await setDoc(docRef, { // ✅ storageData에 공간, 이름, 수량 데이터 저장
+        [selectedSpace]: { name: itemName, quantity: Number(quantity) }
+      }, { merge: true }); // 기존 데이터 유지하면서 덮어쓰기
+      
+      // inboundData 가져와서 ----------------------------------------
+      const inboundSnap = await getDoc(washingtonRef); 
+      let itemId = 1;
 
-    if (inboundSnap.exists()) {
-      const existingData = inboundSnap.data().inboundData || [];
+      if (inboundSnap.exists()) {
+        const existingData = inboundSnap.data().inboundData || [];
+        /*
+        inboundData : [
+          { id: 1, name: "상품A", quantity: 10 },
+          { id: 2, name: "상품B", quantity: 5 }
+        ] 여기서 
+        .inboundData 해서
+        [
+          { id: 1, name: "상품A", quantity: 10 },
+          { id: 2, name: "상품B", quantity: 5 }
+        ] 이거 가져옴
+        inboundData 필드가 없거나 undefined이면 빈 배열 [] 사용
+        */
 
-      if (existingData.length > 0) {
-        // 가장 큰 id 값을 찾아서 +1
-        const maxId = Math.max(...existingData.map((item) => item.id));
-        itemId = maxId + 1;
+        if (existingData.length > 0) {
+          // 가장 큰 id 값을 찾아서 +1
+          const maxId = Math.max(...existingData.map((item) => item.id));
+          itemId = maxId + 1; // id 증가
+        }
       }
-    }
 
-    if (inboundSnap.exists()) {
-      await updateDoc(washingtonRef, {
-        inboundData: arrayUnion({ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() })
-      }, {merge:true});
-    } else {
-      await setDoc(washingtonRef, {
-        inboundData: [{ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() }]
-      });
-    }
+      if (inboundSnap.exists()) {
+        await updateDoc(washingtonRef, { // ✅ 입고 정보 inboundData에 저장
+          inboundData: arrayUnion({ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() })
+        }, {merge:true});
+      } else {
+        await setDoc(washingtonRef, { // inboundData에 아직 데이터 없을 때
+          inboundData: [{ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() }]
+        });
+      }
 
-      // ✅ 창고 데이터 업데이트 (입고 완료된 정보 반영)
+      // 창고 데이터 업데이트 (local 변수?)
       setStorageData((prev) => ({
         ...prev,
         [selectedFloor]: {
@@ -152,26 +162,25 @@ export default function InboundPage() {
       // ✅ 상태 초기화
       setItemName("");
       setQuantity("");
-      alert("✅ 입고를 완료했습니다.");
       setSelectedSpace(null);
       setBoxArrived(false);
+      alert("✅ 입고를 완료했습니다.");
     } catch (error) {
       console.error("❌ 입고 실패:", error);
       alert("⚠️ 입고를 하지 못했습니다.");
     }
   };
 
-  /**
-   * ✅ 비상정지 핸들러
-   * - 버튼을 누르면 비상정지 명령을 STM32로 전송
-   */
+   // ✅ 비상정지 핸들러
+   // - 버튼을 누르면 비상정지 명령을 STM32로 전송
   const handleEmergency = async () => {
+    // 정지 상태면 해제하고, 정상상태면 비상정지
     const emergencyState = isEmergency ? 0 : 1; // 1: 정지, 0: 해제
-    console.log(`🚨 비상정지 요청 - Emergency: ${emergencyState}`);
+    console.log(`🚨 비상정지 요청 - Emergency: ${emergencyState ? '비상정지': '비상정지 해제'}`);
 
-    try {
+    try { // 
       await BluetoothService.sendEmergencyCommand(emergencyState);
-      setIsEmergency(!isEmergency); // ✅ 비상정지 상태 업데이트
+      setIsEmergency(!isEmergency); // 비상정지 상태 업데이트
     } catch (error) {
       console.error("❌ 비상정지 실패:", error);
       alert("⚠️ 비상정지를 수행하지 못했습니다.");
@@ -218,9 +227,9 @@ export default function InboundPage() {
             className="border p-3 rounded-lg text-lg text-center shadow-md mb-3 text-black" />
           <input type="number" placeholder="개수 입력" value={quantity} onChange={(e) => setQuantity(e.target.value)}
             className="border p-3 rounded-lg text-lg text-center shadow-md text-black" />
-            <button className="mt-3 px-6 py-3 bg-blue-500 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleStoreBox}>
-              입고
-            </button>
+          <button className="mt-3 px-6 py-3 bg-blue-500 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleStoreBox}>
+            입고
+          </button>
         </div>
       )}
     
@@ -258,18 +267,6 @@ export default function InboundPage() {
         >
           복귀
         </button>
-
-        {/*
-        <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
-          일시중지
-        </button>
-        <button className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md">
-          다시출발
-        </button>
-        <button className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md">
-          복귀
-        </button>
-        */}
         
 
         {/* ✅ 비상정지 버튼 */}
