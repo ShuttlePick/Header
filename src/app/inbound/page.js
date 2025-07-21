@@ -238,6 +238,28 @@ export default function InboundPage() {
           </button>
         )} */}
 
+        <button
+          className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={() => BluetoothService.sendPauseCommand()}
+        >
+          일시중지
+        </button>
+
+        <button
+          className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={() => BluetoothService.sendResumeCommand()}
+        >
+          다시출발
+        </button>
+
+        <button
+          className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md"
+          onClick={() => BluetoothService.sendReturnCommand()}
+        >
+          복귀
+        </button>
+
+        {/*
         <button className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md">
           일시중지
         </button>
@@ -247,6 +269,8 @@ export default function InboundPage() {
         <button className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md">
           복귀
         </button>
+        */}
+        
 
         {/* ✅ 비상정지 버튼 */}
         <button
