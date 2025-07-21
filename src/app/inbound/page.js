@@ -145,7 +145,7 @@ export default function InboundPage() {
           inboundData: arrayUnion({ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() })
         }, {merge:true});
       } else {
-        await setDoc(washingtonRef, { // inboundData에 아직 데이터 없을때
+        await setDoc(washingtonRef, { // inboundData에 아직 데이터 없을 때
           inboundData: [{ id: itemId, name: itemName, quantity: Number(quantity), timestamp: new Date().toISOString() }]
         });
       }
