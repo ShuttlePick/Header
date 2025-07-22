@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import BluetoothService from "./bluetoothService";
+import ReactDOM from "react-dom";
 
 export default function BluetoothConnect() {
   const [isOpen, setIsOpen] = useState(false);
@@ -175,41 +176,41 @@ export default function BluetoothConnect() {
       </button>
 
       {/* ✅ 블루투스 연결 모달창 */}
-      {isOpen && (
-        <div
-          id="modalOverlay"
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-          onClick={closeModalOutsideClick} // ✅ 배경 클릭하면 닫힘
-        >
-          <div className="bg-white p-6 rounded-lg shadow-lg w-80" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg text-black font-bold mb-4">Bluetooth 연결</h2>
-
-            {/* ✅ 연결 시도 중일 때 로딩 GIF 표시 */}
-            {isConnecting ? (
-              <div className="flex justify-center items-center">
-                <Image src="/기어로딩1.gif" alt="Loading..." width={100} height={100} />
-              </div>
-            ) : isConnected ? (
-              <>
-                <button className="w-full bg-blue-500 text-white py-2 rounded-lg" onClick={disconnectBluetooth}>
-                  Bluetooth 연결 해제
+      {isOpen &&
+        ReactDOM.createPortal(
+          <div
+            id="modalOverlay"
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[9999]"
+            onClick={closeModalOutsideClick}
+          >
+            <div className="bg-white p-6 rounded-lg shadow-lg w-80" onClick={(e) => e.stopPropagation()}>
+              {/* 기존 모달 내용 */}
+              <h2 className="text-lg text-black font-bold mb-4">Bluetooth 연결</h2>
+              {isConnecting ? (
+                <div className="flex justify-center items-center">
+                  <Image src="/기어로딩1.gif" alt="Loading..." width={100} height={100} />
+                </div>
+              ) : isConnected ? (
+                <>
+                  <button className="w-full bg-blue-500 text-white py-2 rounded-lg" onClick={disconnectBluetooth}>
+                    Bluetooth 연결 해제
+                  </button>
+                  <p>연결된 장치: {deviceName}</p>
+                  <p>수신 데이터: {receivedData || "데이터 없음"}</p>
+                </>
+              ) : (
+                <button className="w-full bg-blue-500 text-white py-2 rounded-lg" onClick={connectBluetooth}>
+                  Bluetooth 연결
                 </button>
-                <p>연결된 장치: {deviceName}</p>
-                <p>수신 데이터: {receivedData || "데이터 없음"}</p>
-              </>
-            ) : (
-              <button className="w-full bg-blue-500 text-white py-2 rounded-lg" onClick={connectBluetooth}>
-                Bluetooth 연결
+              )}
+              <button className="w-full mt-4 bg-gray-500 text-white py-2 rounded-lg" onClick={() => setIsOpen(false)}>
+                닫기
               </button>
-            )}
-
-            {/* ✅ 닫기 버튼 추가 */}
-            <button className="w-full mt-4 bg-gray-500 text-white py-2 rounded-lg" onClick={() => setIsOpen(false)}>
-              닫기
-            </button>
-          </div>
-        </div>
-      )}
+            </div>
+          </div>,
+          document.body
+        )
+      }
     </>
   );
 }
