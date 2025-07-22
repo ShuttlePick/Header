@@ -62,11 +62,23 @@ export default function OutboundPage() {
     return unsubscribe; // 컴포넌트 어마운트 시 Firestore 리스너 해제 (메모리 누수 방지)
   };
 
-  useEffect(()=> {
+  useEffect(() => {
     const unsubscribe = fetchAllItems();
+    
+    // BluetoothService 매핑 초기화
+    const initSpaceMapping = async () => {
+      const floor1DocRef = doc(shuttlepickFirestore, "spaceMeta", "1층");
+      const docSnap = await getDoc(floor1DocRef);
+      if (docSnap.exists()) {
+        const spaces = docSnap.data().spaces || [];
+        const columns = spaces.length / 2;
+        BluetoothService.setSpaceMapping(columns, 2);
+      }
+    };
+    initSpaceMapping();
+
     return () => unsubscribe();
-  }, []);//-------------------------------------------------------------
-  
+  }, []);
 
   const filteredItems = (allItems || []).filter((item) => // 조건 맞는 것만 반환
     item.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -377,20 +389,23 @@ export default function OutboundPage() {
 
         <button
           className="px-6 py-3 bg-yellow-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={handlePause}
-        > 일시중지
+          onClick={() => BluetoothService.sendPauseCommand()}
+        >
+          일시중지
         </button>
 
         <button
           className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={handleResume}
-        > 다시출발
+          onClick={() => BluetoothService.sendResumeCommand()}
+        >
+          다시출발
         </button>
 
         <button
           className="px-6 py-3 bg-gray-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={handleReturn}
-        > 복귀
+          onClick={() => BluetoothService.sendReturnCommand()}
+        >
+          복귀
         </button>
 
 
