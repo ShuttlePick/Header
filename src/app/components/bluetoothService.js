@@ -54,6 +54,7 @@ export default class BluetoothService {
     }
 
     try {
+      // 문자열을 바이트로 변환 후 전송
         const encoder = new TextEncoder();
         console.log("📡 Bluetooth 송신 중...", message);
         await this.characteristic.writeValue(encoder.encode(message + "\n"));  // 🔥 개행 추가
@@ -103,10 +104,26 @@ export default class BluetoothService {
   }
 
   // ✅ 다시출발 명령어 전송
-  static async sendResumeCommand() {
+  // static async sendResumeCommand() {
+  //   try {
+  //     console.log("▶️ 다시출발 명령 전송: C");
+  //     await this.sendBluetoothData("C");
+  //     console.log("✅ 다시출발 완료");
+  //   } catch (error) {
+  //     console.error("❌ 다시출발 실패:", error);
+  //   }
+  // }
+  static async sendResumeCommand(space) {
     try {
-      console.log("▶️ 다시출발 명령 전송: C");
-      await this.sendBluetoothData("C");
+      if(!this.spaceMapping[space]) {
+        console.error("❌ 잘못된 공간 선택:", space);
+        return;
+      }
+
+      const command = `C${this.spaceMapping[space]}`;
+
+      console.log("▶️ 다시출발 명령 전송: ", command);
+      await this.sendBluetoothData(command);
       console.log("✅ 다시출발 완료");
     } catch (error) {
       console.error("❌ 다시출발 실패:", error);

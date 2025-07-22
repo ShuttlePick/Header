@@ -256,7 +256,10 @@ export default function InboundPage() {
 
         <button
           className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={() => BluetoothService.sendResumeCommand()}
+          onClick={() => {
+            const formattedSpace = selectedFloor === 2 ? `${selectedSpace}_2F` : selectedSpace;
+            BluetoothService.sendResumeCommand(formattedSpace);
+          }}
         >
           다시출발
         </button>
