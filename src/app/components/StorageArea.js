@@ -5,6 +5,7 @@
 import { shuttlepickFirestore } from "@/firebase";
 import { deleteField, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import React, { useState, useEffect } from "react";
+import BluetoothService from "./bluetoothService";
 
 function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageData, setStorageData }) {
   const [storageSpaces, setStorageSpaces] = useState({
@@ -72,6 +73,11 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
         }, {})
       }
     }));
+
+    // BluetoothService의 spaceMapping 동적 업데이트
+    const newColumnCount = updatedSpaces.length / 2; // 열 개수
+    BluetoothService.setSpaceMapping(newColumnCount, 2); // 2층 기준 (필요시 floors 변수를 계산 가능)
+
 
     alert(`✅ ${newSpaces.join(", ")} 공간이 추가되었습니다.`);
   };
