@@ -1,11 +1,36 @@
 "use client";
 
 export default class BluetoothService {
+
+  // ✅ 동적 공간 매핑 생성 함수
+  static generateSpaceMapping(columns, floors) {
+    const mapping = {};
+    let number = 1;
+
+    for (let floor = 1; floor <= floors; floor++) {
+      for (let col = 1; col <= columns; col++) {
+        mapping[`A${col}${floor === 2 ? "_2F" : ""}`] = number++;
+        mapping[`B${col}${floor === 2 ? "_2F" : ""}`] = number++;
+      }
+    }
+
+    return mapping;
+  }
+
+  // ✅ 기본 공간 매핑
+  static spaceMapping = BluetoothService.generateSpaceMapping(2, 2);
+
+  // ✅ 공간 매핑 업데이트 메서드
+  static setSpaceMapping(columns, floors) {
+    this.spaceMapping = this.generateSpaceMapping(columns, floors);
+    console.log("🔄 새로운 spaceMapping:", this.spaceMapping);
+  }
+
   // ✅ 공간 매핑: 창고의 공간을 박스 번호로 변환
-  static spaceMapping = {
-    "A1": 1, "A2": 3, "B1": 2, "B2": 4,
+  /*static spaceMapping = {
+    "A1": 1, "A2": 3, "B1": 2, "B2": 4, 
     "A1_2F": 5, "A2_2F": 7, "B1_2F": 6, "B2_2F": 8
-  };
+  };*/
 
   // ✅ Bluetooth characteristic 저장
   static characteristic = null;
