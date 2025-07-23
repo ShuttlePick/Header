@@ -38,6 +38,14 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
   }, [selectedFloor]); // 층 바뀔때마다 fetch
 
 
+  useEffect(() => {
+  const gridContainer = document.querySelector(".grid");
+  if (gridContainer) {
+    gridContainer.scrollTop = gridContainer.scrollHeight;
+  }
+}, [storageSpaces, selectedFloor]);
+
+
   // '공간추가' 버튼 클릭시
   const handleAddSpace = async () => {
     // ex) 현재 1층이고, 렉 3개면 이면 ["A1", "B1", "A2", "B2", "A3", "B3"]
@@ -133,7 +141,7 @@ function StorageArea({ selectedFloor, selectedSpace, setSelectedSpace, storageDa
   return (
     <div className="flex flex-col space-y-4">
       <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-auto">
-        {storageSpaces[selectedFloor].map((space) => (
+        {[...storageSpaces[selectedFloor]].reverse().map((space) => (
           <div
             key={space}
             className={`relative border p-6 cursor-pointer rounded-lg flex flex-col justify-center items-center text-center text-base sm:text-lg md:text-xl font-semibold 

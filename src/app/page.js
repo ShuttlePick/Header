@@ -106,6 +106,14 @@ export default function Monitoring() {
     }, [selectedFloor]); // 층 변경될 때마다 실행
 
 
+    useEffect(() => {
+      const gridContainer = document.querySelector(".grid");
+      if(gridContainer) {
+        gridContainer.scrollTop = gridContainer.scrollHeight; //스크롤 맨 아래부터 시작
+      }
+    }, [storageSpaces]);
+
+
   // 🔥 필터링된 입출고 내역
   const filteredData = [...inboundData, ...outboundData]
   .filter((item) => {
@@ -193,8 +201,8 @@ export default function Monitoring() {
 
       {/* ✅ A/B열 공간 */}
       <div className="flex flex-col space-y-4 items-end">
-        <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-auto">
-          {storageSpaces.map((space) =>
+        <div className="grid grid-cols-2 gap-4 max-h-[70vh] overflow-auto flex-col-reverse">
+          {[...storageSpaces].reverse().map((space) =>
             (
               <div
                 key={space}
