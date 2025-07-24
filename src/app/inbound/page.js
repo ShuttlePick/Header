@@ -173,7 +173,7 @@ export default function InboundPage() {
       // ✅ 상태 초기화
       setItemName("");
       setQuantity("");
-      setSelectedSpace(null);
+      // setSelectedSpace(null);
       setBoxArrived(false);
       alert("✅ 입고를 완료했습니다.");
     } catch (error) {
