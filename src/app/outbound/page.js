@@ -25,6 +25,7 @@ export default function OutboundPage() {
   // ✅ 비상정지 상태 추가
   const [isEmergency, setIsEmergency] = useState(false);
 
+
   // ✅ 페이지 로드할 때, storageData에서 데이터 가져오기----------------
   const fetchAllItems = () => {
       const collectionRef = collection(shuttlepickFirestore, "storageData"); // storageData / 1층(문서),2층(문서) 정보 가져오기
@@ -127,9 +128,6 @@ export default function OutboundPage() {
           return; // Bluetooth 전송 실패 시 Firestore 업데이트 중단
         }
 
-        // Bluetooth 전송이 성공하면 "상자 복귀" 버튼을 표시
-        setBoxReturnVisible(true);
-
 
         // ✅ outboundData DB 접근, 데이터 가져오기-----------------------------------
         const washingtonRef = doc(shuttlepickFirestore, "outboundData", "outboundData");
@@ -177,12 +175,15 @@ export default function OutboundPage() {
                 [`${space}.quantity`]: newQuantity,
               });
               console.log(`🚀 출고 완료: ${selectedItem.name} ${itemQuantity}개 (${floor}-${space})`);
+              setBoxReturnVisible(true);
             } else {
               // 개수가 0이면 필드 삭제
               await updateDoc(docRef, {
                 [space]: deleteField(),
               });
               console.log(`🚀 출고 완료 & 공간 삭제: ${selectedItem.name} (${floor}-${space})`);
+              setBoxReturnVisible(false)
+              
             }
           } else {
             console.warn(`⚠️ ${selectedItem.name} (${floor}-${space}) 출고 실패: 재고 부족`);

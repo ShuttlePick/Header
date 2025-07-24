@@ -29,12 +29,23 @@ export default function InboundPage() {
   // 상자 도착 여부 (true: 상자가 도착하여 입고 가능)
   const [boxArrived, setBoxArrived] = useState(false);
 
+  // 공간 선택 flag
+  const [selectedSpaceFlag, setSelectedSpaceFlag] = useState(false);
+
   
    // ✅ 적재 공간 선택 핸들러
    // 사용자가 특정 공간을 클릭하면 해당 공간이 선택됨.
   const handleSelectSpace = (space) => {
-    setSelectedSpace(space); // 선택한 공간으로 setSelectedSpace
-    setBoxArrived(true); // 새로운 공간 선택 시 상자 도착 여부 초기화
+    // setSelectedSpace(space); // 선택한 공간으로 setSelectedSpace
+    if(selectedSpace === space) {
+      setSelectedSpace(null);
+      setBoxArrived(false); // 새로운 공간 선택 시 상자 도착 여부 초기화
+    }
+    else {
+      setSelectedSpace(space);
+      setBoxArrived(true);
+    }
+    
   };
 
   // ✅ 페이지 로드할 때, firesotre에서 데이터 가져오기
