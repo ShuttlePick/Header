@@ -34,7 +34,7 @@ export default function InboundPage() {
    // 사용자가 특정 공간을 클릭하면 해당 공간이 선택됨.
   const handleSelectSpace = (space) => {
     setSelectedSpace(space); // 선택한 공간으로 setSelectedSpace
-    setBoxArrived(false); // 새로운 공간 선택 시 상자 도착 여부 초기화
+    setBoxArrived(true); // 새로운 공간 선택 시 상자 도착 여부 초기화
   };
 
   // ✅ 페이지 로드할 때, firesotre에서 데이터 가져오기
@@ -237,9 +237,7 @@ export default function InboundPage() {
 
       {/* ✅ 버튼 UI */}
         <div className="flex flex-col justify-center space-y-3">
-        <button className="px-6 py-3 bg-gray-600 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleRetrieveBox}>
-          상자 가져오기
-        </button>
+
 
         {/* {boxArrived && (
           <button className="px-6 py-3 bg-blue-500 text-white font-bold text-lg rounded-lg shadow-md" onClick={handleStoreBox}>
