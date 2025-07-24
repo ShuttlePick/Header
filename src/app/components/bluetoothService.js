@@ -115,6 +115,7 @@ export default class BluetoothService {
   // }
   static async sendResumeCommand(space) {
     try {
+      console.log("먀먀: ", space);
       if(!this.spaceMapping[space]) {
         console.error("❌ 잘못된 공간 선택:", space);
         return;

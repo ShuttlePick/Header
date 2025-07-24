@@ -397,7 +397,11 @@ export default function OutboundPage() {
 
         <button
           className="px-6 py-3 bg-green-500 text-white font-bold text-lg rounded-lg shadow-md"
-          onClick={() => BluetoothService.sendResumeCommand()}
+          onClick={() => {
+            const [floor, space] = selectedItem.id.split("-");
+            const formattedSpace = floor === "2층" ? `${space}_2F` : space; 
+            BluetoothService.sendResumeCommand(formattedSpace);
+          }}
         >
           다시출발
         </button>
