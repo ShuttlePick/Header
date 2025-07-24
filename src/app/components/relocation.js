@@ -8,8 +8,11 @@ import checkBlankSpace from "./checkStorageBlank";
 
 
 function comparePriority(a, b, selectedLine) {
-    const [floorA, locA] = a.split('-');
-    const [floorB, locB] = b.split('-');
+    const idA = typeof a === "string" ? a : a.id;
+    const idB = typeof b === "string" ? b : b.id;
+
+    const [floorA, locA] = idA.split('-');
+    const [floorB, locB] = idB.split('-');
 
     const numA = parseInt(locA.slice(1), 10);
     const numB = parseInt(locB.slice(1), 10);
@@ -18,6 +21,7 @@ function comparePriority(a, b, selectedLine) {
     if(floorA !== floorB) return floorA === "1층" ? -1 : 1; //2️⃣1층 우선
     const lineA = locA[0];
     const lineB = locB[0];
+
     if(lineA !== lineB) {
         return lineA === selectedLine ? -1 : 1;
     }
