@@ -7,19 +7,27 @@ import { sortByLFU } from "./LFU";
 import checkBlankSpace from "./checkStorageBlank";
 
 
-function comparePriority(a, b) {
+function comparePriority(a, b, selectedLine) {
     const [floorA, locA] = a.split('-');
     const [floorB, locB] = b.split('-');
 
     const numA = parseInt(locA.slice(1), 10);
     const numB = parseInt(locB.slice(1), 10);
 
-    if(numA !== numB) return numA - numB; //숫자 우선
-    if(floorA !== floorB) return floorA === "1층" ? -1 : 1; // 1층 우선
-    return locA[0].localeCompare(locB[0]); // 알파벳 비교
+    if(numA !== numB) return numA - numB; // 1️⃣ 숫자 우선
+    if(floorA !== floorB) return floorA === "1층" ? -1 : 1; //2️⃣1층 우선
+    const lineA = locA[0];
+    const lineB = locB[0];
+    if(lineA !== lineB) {
+        return lineA === selectedLine ? -1 : 1;
+    }
+
+    return 0;
+    // return locA[0].localeCompare(locB[0]); // 알파벳 비교
 }
 
 export default async function Relocation(selectedItem) {
+    const selectedLine = selectedItem.id.split('-')[1][0];
     
     /*우선순위 :
     1. 숫자가 작을수록 우선
@@ -57,7 +65,7 @@ export default async function Relocation(selectedItem) {
     
     // storageData에서 최신 위치 매핑
     const floors = ["1층", "2층"];
-    const latestPositions = {}; // { name: "1층-A1" }
+    const latestPositions = {}; // { name: { id : "1층-A1", quantity: 10} }
 
     for (const floor of floors) {
         const floorDoc = doc(shuttlepickFirestore, "storageData", floor);
@@ -68,7 +76,10 @@ export default async function Relocation(selectedItem) {
             Object.keys(data).forEach(space => {
                 const item = data[space];
                 if (item && item.name) {
-                    latestPositions[item.name] = `${floor}-${space}`;
+                    latestPositions[item.name] = {
+                        id: `${floor}-${space}`,
+                        quantity: item.quantity   
+                    }
                 }
             });
         }
@@ -79,7 +90,8 @@ export default async function Relocation(selectedItem) {
             item.name, // key = name
             {
                 id: latestPositions[item.name] || "알수없음", // 최신 위치
-                name: item.name
+                name: item.name, 
+                quantity: latestPositions[item.name]?.quantity || 0
             }
         ])).values()
     );
@@ -121,11 +133,11 @@ export default async function Relocation(selectedItem) {
         const prevItemId = uniqueArray[currentIndex - 1].id;
 
         // prevItem보다 selectedItem이 우선순위 낮은지 확인
-        if (comparePriority(selectedItem.id, prevItemId) > 0) {
+        if (comparePriority(selectedItem.id, prevItemId, selectedLine) > 0) {
             // blankspaces 중 prevItem보다 우선순위 낮고 selectedItem보다 높은 첫 공간 찾기
             const replacement = blankspaces.find(blankId =>
-                comparePriority(blankId, prevItemId) > 0 &&
-                comparePriority(blankId, selectedItem.id) < 0
+                comparePriority(blankId, prevItemId, selectedLine) > 0 &&
+                comparePriority(blankId, selectedItem.id, selectedLine) < 0
             );
 
             if (replacement) {
@@ -138,7 +150,8 @@ export default async function Relocation(selectedItem) {
 
     return {
         ...selectedItem,
-        id: newId
+        id: newId,
+        quantity: uniqueArray.find(item => item.name === selectedItem.name)?.quantity || selectedItem.quantity,
     };
 
 
